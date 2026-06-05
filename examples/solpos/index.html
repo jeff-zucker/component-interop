@@ -4,65 +4,66 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>solpos — PodOS using Solid Web Components, brokered by component-interop</title>
+  <title>Component Interop — demo of sharing resources between two component libraries</title>
 
-  <!-- The shell loads ONLY component-interop's own `handler` capability, and uses
-       it to drive the tabs: each tab button is `data-handler="…"`, and the one
-       `interop:activate` listener below swaps the panel. The four demos each load
-       their own libraries inside their iframe. -->
-  <script src="../../component-interop.js"
-          data-extend-with="handler"
-  ></script>
+  <!-- The shell just loads component-interop for its tabs: each tab button is
+       data-handler="…", so ci auto-loads its handler.js when those appear, and one
+       interop:activate listener swaps the panel. Every tab is a self-contained page in
+       an iframe (the first, Interop, demonstrates ci itself). -->
+  <script src="../../component-interop.js"></script>
 
   <style>
-    :root { color-scheme: light; }
-    html, body { background: #ffffff; color: #1a1a1a; }
-    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 64rem; }
-    h1    { font-size: 1.5rem; margin-bottom: .25rem; }
+    :root { color-scheme: light; font-size: 18px; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; background: #2f333d; color: #e6e8ec; }
+    /* Viewport-height column: header + tabs stay put, the active panel fills to the bottom. */
+    body  { font: 1rem/1.6 system-ui, sans-serif; margin: 0 auto; padding: 1.5rem 2rem 2rem;
+            max-width: 64rem; display: flex; flex-direction: column; }
+    h1    { font-size: 1.5rem; margin: 0 0 .25rem; color: #f3f4f6; }
+    body > p { margin: 0 0 1rem; }   /* space above the tabs; tabs sit flush on the panel */
+    a     { color: #8ab4f8; }
+    a:hover { color: #b3d0fb; }
     .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; margin: 1rem 0 1.5rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
 
-    .tabs { display: flex; gap: .25rem; border-bottom: 2px solid #ccc; }
+    .tabs { display: flex; flex-wrap: wrap; gap: .2rem; border-bottom: 2px solid #5b6270; flex: none; }
     .tabs button[role="tab"] {
-      font: inherit; font-size: .98rem; cursor: pointer;
-      background: #f3f4f8; color: #1a1a1a;
-      border: 1px solid #ccc; border-bottom: none;
-      border-radius: 8px 8px 0 0; padding: .5rem 1rem; margin-bottom: -2px;
+      font: inherit; font-size: 1rem; cursor: pointer;
+      background: #4b515e; color: #e6e8ec;
+      border: 1px solid #5b6270; border-bottom: none;
+      border-radius: 8px 8px 0 0; padding: .4rem .65rem; margin-bottom: -2px;
     }
     .tabs button[role="tab"][aria-selected="true"] {
-      background: #fff; border-color: #ccc; border-bottom: 2px solid #fff;
+      background: #fff; color: #1a1a1a; border-color: #5b6270; border-bottom: 2px solid #fff;
       font-weight: 600;
     }
-    .tabs button[role="tab"]:focus-visible { outline: 2px solid #2a5db0; outline-offset: 2px; }
+    .tabs button[role="tab"]:focus-visible { outline: 2px solid #9db8e8; outline-offset: 2px; }
 
-    [role="tabpanel"] { border: 1px solid #ccc; border-top: none;
-      border-radius: 0 0 8px 8px; }
+    [role="tabpanel"] { background: #fff; color: #1a1a1a; border: 1px solid #5b6270;
+      border-top: none; border-radius: 0 0 8px 8px; flex: 1 1 auto; min-height: 0; }
     [role="tabpanel"][hidden] { display: none; }
-    iframe { display: block; width: 100%; height: 34rem; border: 0; }
+    iframe { display: block; width: 100%; height: 100%; border: 0; }
   </style>
 </head>
 <body>
 
-<h1>PodOS, using Solid Web Components</h1>
-<p>component-interop loads two independently-authored libraries and lets one use the other — no glue
-  code. Each tab is a PodOS page gaining a Solid Web Components capability.</p>
+<h1>Component Interop Demo</h1>
+<p>These demos show how to use the <b>component-interop</b> library using examples from Angelo's <a href="https://github.com/pod-os/PodOS/tree/main/elements">PodOS Element components</a> and Jeff's <a href="">Sol Components</a>.
 
-<div class="intro">
-  The tab bar itself is component-interop's <code>handler</code> capability at work: each tab is a
-  plain <code>&lt;button data-handler="…"&gt;</code>, and one <code>interop:activate</code> listener
-  swaps the panel.
-</div>
-
-<div class="tabs" role="tablist" aria-label="Solid Web Components capabilities">
-  <button role="tab" id="tab-navigation" data-handler="navigation" aria-controls="panel-navigation" aria-selected="true"  tabindex="0">Shared Navigation</button>
+<div class="tabs" role="tablist" aria-label="component-interop demos">
+  <button role="tab" id="tab-interop"    data-handler="interop"    aria-controls="panel-interop"    aria-selected="true"  tabindex="0">Interop</button>
+  <button role="tab" id="tab-navigation" data-handler="navigation" aria-controls="panel-navigation" aria-selected="false" tabindex="-1">Shared Navigation</button>
   <button role="tab" id="tab-store"      data-handler="store"      aria-controls="panel-store"      aria-selected="false" tabindex="-1">Shared Store</button>
   <button role="tab" id="tab-forms"      data-handler="forms"      aria-controls="panel-forms"      aria-selected="false" tabindex="-1">Auto-generated Forms</button>
   <button role="tab" id="tab-query"      data-handler="query"      aria-controls="panel-query"      aria-selected="false" tabindex="-1">Shared SPARQL</button>
   <button role="tab" id="tab-auth"       data-handler="auth"       aria-controls="panel-auth"       aria-selected="false" tabindex="-1">Shared Auth</button>
 </div>
 
-<div role="tabpanel" id="panel-navigation" aria-labelledby="tab-navigation">
+<div role="tabpanel" id="panel-interop" aria-labelledby="tab-interop">
+  <iframe data-src="interop.html" title="What component-interop provides" loading="lazy"></iframe>
+</div>
+<div role="tabpanel" id="panel-navigation" aria-labelledby="tab-navigation" hidden>
   <iframe data-src="navigation.html" title="Shared Navigation demo" loading="lazy"></iframe>
 </div>
 <div role="tabpanel" id="panel-store" aria-labelledby="tab-store" hidden>
@@ -91,7 +92,7 @@
     throw new Error('solpos: file:// is not supported — serve over http');
   }
 
-  const order = ['navigation', 'store', 'forms', 'query', 'auth'];
+  const order = ['interop', 'navigation', 'store', 'forms', 'query', 'auth'];
   const tab   = (k) => document.getElementById('tab-' + k);
   const panel = (k) => document.getElementById('panel-' + k);
 
@@ -127,7 +128,7 @@
   });
 
   // Show the first tab immediately (independent of when ci finishes loading).
-  activate('navigation');
+  activate('interop');
 </script>
 
 <!-- Hosts the full-height "View code" modal: each tab's button calls up to

@@ -1,16 +1,16 @@
 {
   "name": "pod-os",
-  "imports": {
+  "components": {
     "@pod-os/elements": "https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.esm.js"
   },
-  "interop": {
+  "objects": {
     "provides": {
-      "store":    { "event": "pod-os:loaded", "path": "detail.os.store.internalStore" },
-      "auth":     { "event": "pod-os:loaded", "path": "detail.authenticatedFetch" },
-      "resource": { "event": "pod-os:resource-loaded", "path": "detail" }
+      "store":      { "respondTo": "pod-os:loaded", "sendValue": "detail.os.store.internalStore" },
+      "auth":       { "respondTo": "pod-os:loaded", "sendValue": "detail.authenticatedFetch" },
+      "navigation": { "respondTo": "pod-os:resource-loaded", "sendValue": "detail" }
     },
     "accepts": {
-      "resource": { "selector": "pos-resource", "attr": "uri" }
+      "navigation": { "onElement": "pos-resource", "applyValueTo": "uri" }
     }
   }
 }

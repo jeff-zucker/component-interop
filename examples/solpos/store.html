@@ -7,7 +7,8 @@
   <title>solpos — Shared Store: PodOS and Solid Web Components on one RDF graph</title>
 
   <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css">
+        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
+  >
 
   <!-- component-interop wires the rdf capability: PodOS PROVIDES its RDF store
        (pod-os:loaded → os.store.internalStore); swc CONSUMES it (rdf.useStore). We
@@ -16,14 +17,13 @@
   <script src="../../component-interop.js"
           data-stage="local"
           data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
-          data-bundles="solid-web-components/core/rdf.js @pod-os/elements"
-          data-extend-with="rdf"
+          data-components="solid-web-components/core/rdf.js @pod-os/elements"
   ></script>
 
   <style>
-    :root { color-scheme: light; }
+    :root { color-scheme: light; font-size: 18px; }
     html, body { background: #ffffff; color: #1a1a1a; }
-    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    body  { font: 1rem/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
     h1    { font-size: 1.5rem; }
     .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; }
@@ -35,7 +35,7 @@
     table.proof th, table.proof td { text-align: left; padding: .35rem .6rem; border-bottom: 1px solid #eee; }
     table.proof th { color: #555; font-weight: 600; width: 60%; }
     .ok { color: #1a6e1a; font-weight: 600; } .no { color: #a11; font-weight: 600; }
-    .status { color: #555; font-size: .9rem; }
+    .status { color: #555; font-size: 1rem; }
     button { font: inherit; padding: .4rem .8rem; border: 1px solid #b9ccea; border-radius: 6px;
              background: #eef4ff; cursor: pointer; }
   </style>
@@ -134,8 +134,7 @@
 &lt;script src="component-interop.js"
         data-stage="local"
         data-manifest="sol-loader.manifest.json pod-os.manifest.json"
-        data-bundles="solid-web-components/core/rdf.js @pod-os/elements"
-        data-extend-with="rdf"
+        data-components="solid-web-components/core/rdf.js @pod-os/elements"
 &gt;&lt;/script&gt;
 
 &lt;!-- PodOS loads a resource into its rdflib store --&gt;
@@ -152,14 +151,14 @@
 <pre id="demo-manifests" hidden>
 # pod-os.manifest.json — PodOS hands over its store
 {
-  "interop": {
-    "provides": { "store": { "event": "pod-os:loaded", "path": "detail.os.store.internalStore" } }
+  "objects": {
+    "provides": { "store": { "respondTo": "pod-os:loaded", "sendValue": "detail.os.store.internalStore" } }
   }
 }
 
 # solid-web-components manifest — swc adopts it (calls its rdf.useStore handler)
 {
-  "interop": {
+  "objects": {
     "consumes": { "store": { "call": "rdf.useStore" } }
   }
 }

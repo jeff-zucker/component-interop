@@ -1,34 +1,59 @@
 # solpos — component-interop letting PodOS use Solid Web Components
 
 These pages show **component-interop** loading two separate web-component libraries —
-**Solid Web Components** (swc) and **PodOS** — and letting a PodOS page *use* swc's
-capabilities, with no glue code.
+**Solid Web Components** (swc) and **PodOS** — on one page, with no glue code.
 
-`index.html` is a **tabbed shell**. Its tab bar is itself component-interop's
-`handler` capability (each tab is a `<button data-handler="…">`; one
-`interop:activate` listener swaps the panel). Each tab loads one focused demo in an
-iframe. Every demo page has a **"View code"** button (top-right) that reveals the
-markup a PodOS app writes for that capability — a shared `view-code.js` renders each
-page's hidden `#demo-code` snippet into an accessible panel. The five tabs:
+## The whole model
 
-- **Shared Navigation** (`navigation.html`) — swc's `<sol-pod>` browser drives;
-  PodOS's `<pos-*>` follows the same current resource via the broker's *resource*
-  channel (`sol-navigate` → `pos-resource@uri`). One-way today — the reverse
-  (navigate in PodOS → swc follows) is a deferred investigation
-  (`../../claude/investigations/two-way-resource-channel.md`).
-- **Shared Store** (`store.html`) — the broker's *store* pairing: PodOS *provides*
-  its rdflib graph (`pod-os:loaded` → `internalStore`) and swc *consumes* it
-  (`rdf.useStore`), so swc's `rdf` service `.store` **is** PodOS's `internalStore`
-  (one object, same triples). The page reports the live graph as swc sees it.
-- **Auto-generated Forms** (`forms.html`) — `data-extend-with="rdf"`: a plain
-  `<div>` next to a PodOS panel becomes an editor generated from a SHACL shape
-  (`data-edit-shape` / `data-subject` / `data-edit-mode`) + `<sol-settings>`.
-- **Query** (`query.html`) — `data-extend-with="sparql"`: a plain
-  `<ul data-from-query …>` lists a folder with SPARQL on a PodOS page.
-- **Shared Auth** (`auth.html`) — `data-extend-with="auth"`: sign in with swc's
-  `<sol-login>` (pick an issuer), and the page reads your pod's `/private/` — swc's
-  `<sol-include>` with the session (the reliable proof the login is shared) beside a
-  PodOS `<pos-resource>` pointed at the same URL.
+A manifest's **offerings** — what you read to *use* a library:
+
+- **components** — elements you place (a name → a URL). A page loads them with
+  `data-components="…"` (or `"*"` for all of them).
+- **attributes** — a `data-*` you use; ci **auto-loads** its module(s) the moment the
+  attribute appears on the page. Nothing to declare on the page.
+- **objects** — a value one library shares: it `provides` the value, and another
+  `consumes` it (calls a handler) or `accepts` it (sets a DOM attribute). Matched by
+  key, so **neither library imports the other**.
+
+Its **plumbing** — only a co-author wiring shared deps reads these:
+
+- **shared-modules** — deps a library externalizes by name so peers dedupe (above all
+  `rdflib` — the shared store).
+- **bundles** — a logical name for a group of modules an attribute points at.
+
+```json
+{
+  "components": { "my-el": "./my-el.js" },                       // place an element
+  "attributes": { "data-edit-shape": "rdf-bundle" },             // a data-* → its module(s) / a bundle name
+  "bundles":    { "rdf-bundle": ["solid-ui", "sol-form", "…"] }, // a logical module group
+  "objects": {                                                   // share a value
+    "provides": { "store": { "service": "rdf", "sendValue": "store" } },
+    "consumes": { "store": { "call": "useStore" } }
+  }
+}
+```
+
+From the page author's seat there's really one move — **load the libraries** (and use
+their `data-*`); the rest is the libraries' manifests declaring what they share.
+
+## The tabs
+
+`index.html` is a tabbed shell (its tab bar is itself component-interop's `data-handler`
+attribute, auto-loaded). Each tab is one focused demo in an iframe; every page's top-right
+**"View code"** opens a full-page panel showing that page **plus the manifest slice** that
+wires it. Each demo is some mix of the offerings:
+
+| tab | what loads | objects (share a value) |
+|-----|-----------|---------------|
+| **Shared Navigation** | `sol-pod` + PodOS elements | the current resource URL — swc `provides` `navigation` (`sol-navigate`) → PodOS `accepts` it (`pos-resource@uri`) |
+| **Shared Store** | swc's rdf core + PodOS | the RDF store — PodOS `provides` `store` (`internalStore`) → swc `consumes` it (`rdf.useStore`); swc's `.store` **is** PodOS's, same object |
+| **Auto-generated Forms** | `data-edit-*` (auto-loads `rdf-bundle`) | — (a plain `<div>` + `data-edit-shape` becomes a shape-driven editor) |
+| **Shared SPARQL** | `data-from-query` (auto-loads) | — (`data-from-query` on a plain `<ul>`) |
+| **Shared Auth** | swc's `<sol-login>` (a component) | the authenticated `fetch` (the sign-in session) |
+
+So **Forms** and **SPARQL** are pure *attributes* — a PodOS page simply gains a swc
+behaviour by using the `data-*`, and ci auto-loads the code. **Navigation**, **Store**,
+and **Auth** also share an *object*.
 
 ## Run them
 
@@ -42,10 +67,13 @@ python3 -m http.server 8080
 Then open `http://localhost:8080/component-interop/examples/solpos/` (or any single
 page directly, e.g. `…/solpos/query.html`).
 
-## A note on the Auth tab
+## Two caveats
 
-PodOS's `<pos-app>` manages its own session and exposes no hook to adopt an outside
-fetch, and swc's `<sol-login>` patches rdflib's `Fetcher` (not the global `fetch`).
-So the swc `<sol-include>` is the dependable demonstration that the session is
-shared; the PodOS side may still use its own login. component-interop wires what a
-library *declares* — it can't reach past an API a library doesn't offer.
+- **Shared Navigation is one-way** (swc drives → PodOS follows). The reverse
+  (navigate in PodOS → swc follows) is parked in
+  `../../claude/investigations/two-way-resource-channel.md`.
+- **Shared Auth:** PodOS's `<pos-app>` manages its own session and exposes no hook to
+  adopt an outside fetch, and swc's `<sol-login>` patches rdflib's `Fetcher` (not the
+  global `fetch`). So the swc `<sol-include>` is the dependable proof the session is
+  shared; the PodOS side may still use its own login. component-interop wires what a
+  library *declares* — it can't reach past an API a library doesn't offer.

@@ -9,7 +9,13 @@
 //    the page is opened on its own.
 
 (function () {
-  function trim(el) { return el ? el.textContent.replace(/^\n+|\s+$/g, '') : ''; }
+  // A <template> lets a page author the snippet as PLAIN HTML (inert, never rendered
+  // or executed); read it back via innerHTML. A <pre> holds pre-escaped text.
+  function trim(el) {
+    if (!el) return '';
+    var raw = (el.tagName === 'TEMPLATE') ? el.innerHTML : el.textContent;
+    return raw.replace(/^\n+|\s+$/g, '');
+  }
 
   function ensureStyle(doc) {
     if (doc.getElementById('view-code-style')) return;
@@ -35,14 +41,17 @@
       .view-code-label { font-size: .82rem; font-weight: 600; color: #57606a; margin: 1.1rem 0 .4rem; }
       .view-code-label .note { font-weight: 400; color: #8a93a0; }
       .view-code-body pre { margin: 0; }
-      .view-code-body code { display: block; background: #f6f8fa; color: #1a1a1a;
-        border: 1px solid #e2e6ea; border-radius: 8px; padding: 1rem 1.1rem;
+      .view-code-body code, .view-code-body xmp { display: block; background: #f6f8fa; color: #1a1a1a;
+        border: 1px solid #e2e6ea; border-radius: 8px; padding: 1rem 1.1rem; margin: .5rem 0 1rem;
         font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        white-space: pre; overflow-x: auto; }`;
+        white-space: pre; overflow-x: auto; }
+      .view-code-body h1, .view-code-body h2, .view-code-body h3 { font-size: 1rem; margin: 1.2rem 0 .4rem; }
+      .view-code-body :is(h1,h2,h3):first-child { margin-top: .3rem; }
+      .view-code-body p { margin: 0 0 .8rem; }`;
     (doc.head || doc.documentElement).appendChild(style);
   }
 
-  function openModal(doc, sections) {
+  function openModal(doc, content) {
     ensureStyle(doc);
     var prev = doc.getElementById('view-code-dialog');
     if (prev) prev.remove();
@@ -59,9 +68,7 @@
     head.className = 'view-code-head';
     var title = doc.createElement('strong');
     title.id = 'view-code-title';
-    title.textContent = (sections.length > 1)
-      ? 'How this demo is wired — page + manifests'
-      : 'Code a PodOS app writes for this demo';
+    // No heading text baked in here — a page supplies its own (see below).
     var close = doc.createElement('button');
     close.type = 'button';
     close.className = 'view-code-close';
@@ -71,16 +78,17 @@
 
     var body = doc.createElement('div');
     body.className = 'view-code-body';
-    sections.forEach(function (s) {
-      var label = doc.createElement('p');
-      label.className = 'view-code-label';
-      label.innerHTML = s.labelHTML;
-      var pre = doc.createElement('pre');
-      var code = doc.createElement('code');
-      code.textContent = s.code;
-      pre.appendChild(code);
-      body.append(label, pre);
-    });
+    if (typeof content === 'string') {
+      body.innerHTML = content;   // the page's own modal file — its HTML, its <xmp> code blocks
+    } else {
+      content.forEach(function (s) {   // legacy: array of { code } shown as code blocks
+        var pre = doc.createElement('pre');
+        var code = doc.createElement('code');
+        code.textContent = s.code;
+        pre.appendChild(code);
+        body.appendChild(pre);
+      });
+    }
 
     frame.append(head, body);
     dialog.appendChild(frame);
@@ -94,22 +102,18 @@
     return dialog;
   }
 
-  // Expose so an iframe can open the modal in THIS (top-level) document.
-  window.solposViewCode = function (sections) { return openModal(document, sections); };
+  // Expose so an iframe can open the modal in THIS (top-level) document. `content`
+  // is either an HTML string (rendered as the modal body) or an array of {code}.
+  window.solposViewCode = function (content) { return openModal(document, content); };
 
-  // If this document carries demo code, add the button (delegates to the shell).
+  // A page declares its modal content as a separate file it fully controls:
+  //   <link rel="view-code" href="interop.modal.html">
+  // That file is plain HTML — write any text around <xmp> blocks (each shows its
+  // contents verbatim as code). On click we fetch it and render it in the modal.
+  // (Legacy: a page with #demo-code [+ #demo-manifests] is shown as plain code blocks.)
+  var link = document.querySelector('link[rel="view-code"]');
   var codeEl = document.getElementById('demo-code');
-  if (codeEl) {
-    var sections = [{
-      labelHTML: 'What the PodOS app writes <span class="note">— the page</span>',
-      code: trim(codeEl),
-    }];
-    var man = document.getElementById('demo-manifests');
-    if (man) sections.push({
-      labelHTML: 'The manifests it points at <span class="note">— where the wiring lives, not your page</span>',
-      code: trim(man),
-    });
-
+  if (link || codeEl) {
     ensureStyle(document);
     var btn = document.createElement('button');
     btn.type = 'button';
@@ -120,7 +124,15 @@
     btn.addEventListener('click', function () {
       var host = (window.parent && window.parent !== window && typeof window.parent.solposViewCode === 'function')
         ? window.parent : window;
-      host.solposViewCode(sections);
+      if (link) {
+        fetch(link.getAttribute('href')).then(function (r) { return r.text(); })
+          .then(function (html) { host.solposViewCode(html); });
+      } else {
+        var sections = [{ code: trim(codeEl) }];
+        var man = document.getElementById('demo-manifests');
+        if (man) sections.push({ code: trim(man) });
+        host.solposViewCode(sections);
+      }
     });
     document.body.appendChild(btn);
   }

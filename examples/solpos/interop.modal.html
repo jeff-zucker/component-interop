@@ -1,0 +1,35 @@
+<!-- This whole file is the "View code" modal body. Write any HTML/text you like
+     around the <xmp> blocks; each <xmp> shows its contents verbatim as code. -->
+
+<xmp>
+<script src="../../component-interop.js"
+        data-stage="local"
+        data-manifest="pod-os.manifest.json"
+        data-components="@pod-os/elements"
+></script>
+</xmp>
+
+<xmp>
+<div class="mini-tabs" role="group" aria-label="Pod folders" id="pos-folders">
+  <button type="button" data-handler="pos-resource" data-uri="https://timbl.solidcommunity.net/public/"      aria-pressed="true">Public</button>
+  <button type="button" data-handler="pos-resource" data-uri="https://timbl.solidcommunity.net/public/2018/" aria-pressed="false">2018</button>
+  <button type="button" data-handler="pos-resource" data-uri="https://timbl.solidcommunity.net/public/2020/" aria-pressed="false">2020</button>
+</div>
+<pos-app>
+  <div id="pos-pane" role="region" aria-label="Folder contents" aria-live="polite"></div>
+</pos-app>
+</xmp>
+
+<xmp>
+<script>
+  var posBtns = function () { return Array.prototype.slice.call(document.querySelectorAll('#pos-folders button')); };
+
+  document.addEventListener('interop:activate', function (e) {
+    if (e.detail.handler !== 'pos-resource') return;
+    var res = e.detail.element;
+    res.innerHTML = '<pos-container-contents></pos-container-contents>';
+    document.getElementById('pos-pane').replaceChildren(res);
+    posBtns().forEach(function (b) { b.setAttribute('aria-pressed', String(b === e.detail.source)); });
+  });
+</script>
+</xmp>

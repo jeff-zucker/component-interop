@@ -7,38 +7,38 @@
   <title>solpos — Auth: a Solid Web Components login, shared with PodOS</title>
 
   <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css">
+        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
+  >
 
   <!-- component-interop loads PodOS (its descriptor) and Solid Web Components (its
-       manifest). data-extend-with="auth" loads swc's <sol-login>; sol-include is a
-       bundle. Logging in with sol-login establishes the session both sides try to
-       read your pod's /private/ with. -->
+       manifest). data-components loads swc's <sol-login> + <sol-include> (plain
+       components). Logging in with sol-login establishes the session both sides try
+       to read your pod's /private/ with. -->
   <script src="../../component-interop.js"
           data-stage="local"
           data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
-          data-bundles="sol-include @pod-os/elements"
-          data-extend-with="auth"
+          data-components="solid-web-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
   ></script>
 
   <style>
-    :root { color-scheme: light; }
+    :root { color-scheme: light; font-size: 18px; }
     html, body { background: #ffffff; color: #1a1a1a; }
-    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    body  { font: 1rem/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
     h1    { font-size: 1.5rem; }
     .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; }
     .note { background: #f3f6fa; border: 1px solid #c9d3df; border-radius: 6px;
-            padding: .75rem 1rem; font-size: .92rem; color: #1a1a1a; margin-top: 1rem; }
+            padding: .75rem 1rem; font-size: 1rem; color: #1a1a1a; margin-top: 1rem; }
     .bar  { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
-    .status { color: #555; font-size: .95rem; }
+    .status { color: #555; font-size: 1rem; }
     .cols { display: flex; gap: 1.5rem; }
     .col  { flex: 1 1 0; min-width: 0; border: 1px solid #ccc; border-radius: 8px;
             padding: 1rem; background: #fff; }
     .col h2 { font-size: 1.05rem; margin: 0 0 .25rem; }
-    .col .cap { margin: 0 0 1rem; color: #555; font-size: .9rem; }
+    .col .cap { margin: 0 0 1rem; color: #555; font-size: 1rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
     sol-include, pos-container-contents { display: block; max-height: 14em; overflow: auto; }
-    sol-include[raw] { white-space: pre-wrap; font: 13px/1.4 ui-monospace, monospace; }
+    sol-include[raw] { white-space: pre-wrap; font: 1rem/1.4 ui-monospace, monospace; }
   </style>
 </head>
 <body>
@@ -112,8 +112,7 @@
 &lt;script src="component-interop.js"
         data-stage="local"
         data-manifest="sol-loader.manifest.json pod-os.manifest.json"
-        data-bundles="sol-include @pod-os/elements"
-        data-extend-with="auth"
+        data-components="solid-web-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
 &gt;&lt;/script&gt;
 
 &lt;sol-login issuers="https://solidcommunity.net,https://solidweb.me,https://solidweb.org"&gt;&lt;/sol-login&gt;
@@ -131,13 +130,11 @@
 &lt;/script&gt;
 </pre>
 <pre id="demo-manifests" hidden>
-# solid-web-components manifest — the auth capability (loads sol-login) + the session it shares
+# solid-web-components manifest — sol-login is a plain component; it shares the session
 {
-  "capabilities": {
-    "auth": { "modules": ["solid-web-components/core/inrupt-global.js", "sol-login"] }
-  },
-  "interop": {
-    "provides": { "auth": { "service": "auth", "path": "fetch" } },
+  "components": { "sol-login": "../web/sol-login.js" },
+  "objects": {
+    "provides": { "auth": { "service": "auth", "sendValue": "fetch" } },
     "consumes": { "auth": { "call": "adoptFetch" } }
   }
 }

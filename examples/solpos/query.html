@@ -7,22 +7,22 @@
   <title>solpos — Query: a PodOS page gains SPARQL from Solid Web Components</title>
 
   <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css">
+        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
+  >
 
   <!-- component-interop pulls in PodOS (its descriptor) and Solid Web Components
-       (its manifest), so the swc `sparql` capability becomes available on this
-       PodOS page. -->
+       (its manifest), so using `data-from-query` here auto-loads swc's SPARQL
+       module on this PodOS page. -->
   <script src="../../component-interop.js"
           data-stage="local"
           data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
-          data-bundles="@pod-os/elements"
-          data-extend-with="sparql"
+          data-components="@pod-os/elements"
   ></script>
 
   <style>
-    :root { color-scheme: light; }
+    :root { color-scheme: light; font-size: 18px; }
     html, body { background: #ffffff; color: #1a1a1a; }
-    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    body  { font: 1rem/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
     h1    { font-size: 1.5rem; }
     .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; }
@@ -65,8 +65,7 @@
 &lt;script src="component-interop.js"
         data-stage="local"
         data-manifest="sol-loader.manifest.json pod-os.manifest.json"
-        data-bundles="@pod-os/elements"
-        data-extend-with="sparql"
+        data-components="@pod-os/elements"
 &gt;&lt;/script&gt;
 
 &lt;pos-app&gt;
@@ -83,14 +82,11 @@
 &gt;&lt;/ul&gt;
 </pre>
 <pre id="demo-manifests" hidden>
-# solid-web-components manifest — the sparql capability swc ships
-# (no channel here — data-extend-with="sparql" just loads code)
+# solid-web-components manifest — data-from-query auto-loads the SPARQL module
+# (no object shared here — using the attribute just pulls in code on demand)
 {
-  "capabilities": {
-    "sparql": {
-      "modules": ["solid-web-components/core/from-query.js"],
-      "attributes": ["data-from-query"]
-    }
+  "attributes": {
+    "data-from-query": "solid-web-components/core/from-query.js"
   }
 }
 </pre>

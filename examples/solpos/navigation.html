@@ -7,7 +7,8 @@
   <title>solpos — Shared Navigation: PodOS follows Solid Web Components</title>
 
   <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css">
+        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
+  >
 
   <!-- component-interop loads Solid Web Components (its manifest) and PodOS (a local
        descriptor) and wires their resource channels together — no glue code.
@@ -15,13 +16,13 @@
   <script src="../../component-interop.js"
           data-stage="local"
           data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
-          data-bundles="sol-pod @pod-os/elements"
+          data-components="sol-pod @pod-os/elements"
   ></script>
 
   <style>
-    :root { color-scheme: light; }
+    :root { color-scheme: light; font-size: 18px; }
     html, body { background: #ffffff; color: #1a1a1a; }
-    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    body  { font: 1rem/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
     h1    { font-size: 1.5rem; }
     .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; }
@@ -29,21 +30,20 @@
     .col  { flex: 1 1 0; min-width: 0; border: 1px solid #ccc; border-radius: 8px;
             padding: 1rem; background: #fff; }
     .col h2  { font-size: 1.05rem; margin: 0 0 .25rem; color: #1a1a1a; }
-    .col .cap { margin: 0 0 1rem; color: #555; font-size: .9rem; }
+    .col .cap { margin: 0 0 1rem; color: #555; font-size: 1rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
     sol-pod, pos-container-contents { display: block; max-height: 12em; overflow-y: auto; }
   </style>
 </head>
 <body>
 
-<h1>Shared Navigation — open a resource once, both libraries follow</h1>
+<h1>Shared Navigation — open a resource with one library, both libraries follow</h1>
 
 <div class="intro">
-  component-interop loads <strong>Solid Web Components</strong> and <strong>PodOS</strong> and wires
+  `component-interop` loads <strong>Solid Web Components</strong> and <strong>PodOS</strong> and wires
   their <em>resource</em> channels together — no glue code. <strong>Browse on the left; PodOS on the
   right follows.</strong> Open a folder in the Solid Web Components browser and PodOS shows that same
-  folder. This is the broker's <em>resource</em> channel, wired from the two manifests — no capability
-  and no glue. (Sharing the underlying RDF <em>store</em> is a separate pairing — see the Shared Store tab.)
+  folder. 
 </div>
 
 <div class="cols">
@@ -65,13 +65,16 @@
 </div>
 
 <pre id="demo-code" hidden>
+&lt;!-- <b>USE COMPONENT-INTEROP TO LOAD TWO SETS OF COMPONENTS</b>
+--&gt;
 &lt;script src="component-interop.js"
         data-stage="local"
         data-manifest="sol-loader.manifest.json pod-os.manifest.json"
-        data-bundles="sol-pod @pod-os/elements"
+        data-components="sol-pod @pod-os/elements"
 &gt;&lt;/script&gt;
 
-&lt;!-- swc's browser drives navigation --&gt;
+&lt;!-- PUT THE GUEST COMPONENT'S HTML IN THE PAGE
+--&gt;
 &lt;sol-pod source="https://timbl.solidcommunity.net/public/"&gt;&lt;/sol-pod&gt;
 
 &lt;!-- PodOS follows the same current resource via the broker's resource channel --&gt;
@@ -82,17 +85,21 @@
 &lt;/pos-app&gt;
 </pre>
 <pre id="demo-manifests" hidden>
-# solid-web-components manifest — swc ships it; you point data-manifest at it
+# THE GUEST LIBRARY DECLARES IN ITS MANIFEST THAT IT PROVIDES SOMETHING
+# -- swc says it sends the url from a sol-navigate event under the key `navigation`
+#
 {
-  "interop": {
-    "provides": { "resource": { "event": "sol-navigate", "path": "detail.url" } }
+  "objects": {
+    "provides": { "navigation": { "respondTo": "sol-navigate", "sendValue": "detail.url" } }
   }
 }
 
-# pod-os.manifest.json — you ship this small descriptor
+# THE HOST LIBRARY DECLARES IN ITS MANIFEST THAT IT ACCEPTS THAT THING
+# -- PodOS accepts `navigation` and slots the url it gets into pos-resource's uri attribute
+#
 {
-  "interop": {
-    "accepts": { "resource": { "selector": "pos-resource", "attr": "uri" } }
+  "objects": {
+    "accepts": { "navigation": { "onElement": "pos-resource", "applyValueTo": "uri" } }
   }
 }
 </pre>
