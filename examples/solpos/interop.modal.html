@@ -1,35 +1,40 @@
-<!-- This whole file is the "View code" modal body. Write any HTML/text you like
-     around the <xmp> blocks; each <xmp> shows its contents verbatim as code. -->
+<style>
+h2  {margin-bottom:0;}
+xmp {margin-top:0;}
+</style>
 
-<xmp>
-<script src="../../component-interop.js"
-        data-stage="local"
-        data-manifest="pod-os.manifest.json"
-        data-components="@pod-os/elements"
-></script>
+<h2>1. In the app head, invoke component-interop</h2>
+<xmp><script src="../../component-interop.js"
+        data-stage="local"                    // user decides to stage prereqs local/CDN
+        data-manifest="pod-os.manifest.json"  // user points at one URL, not one per prereq
+        data-components="@pod-os/elements"    // here we import one library's components
+></script></xmp>
+
+<h2>2. In the app body, add the data-handler attribute to any element</h2>
+<p>The <i>data-handler</i> names the component to build; the other attributes get sent to that component.</p>
+<xmp><pos-app><div id="pos-photos">
+    <button data-handler="pos-image"
+            data-src="https://timbl.solidcommunity.net/profile/TBL%20by%20coz%20Solid%20purple.png"
+            data-alt="Tim Berners-Lee">Tim</button>
+    <button data-handler="pos-image"
+            data-src="https://angelo.veltens.org/profile/me.jpg"
+            data-alt="Angelo Veltens">Angelo</button>
+    <button data-handler="pos-image"
+            data-src="https://virginiabalseiro.com/assets/images/profile.jpg"
+            data-alt="Virginia Balseiro">Virginia</button>
+  </div>
+  <div id="pos-pane"></div></pos-app>
 </xmp>
 
-<xmp>
-<div class="mini-tabs" role="group" aria-label="Pod folders" id="pos-folders">
-  <button type="button" data-handler="pos-resource" data-uri="https://timbl.solidcommunity.net/public/"      aria-pressed="true">Public</button>
-  <button type="button" data-handler="pos-resource" data-uri="https://timbl.solidcommunity.net/public/2018/" aria-pressed="false">2018</button>
-  <button type="button" data-handler="pos-resource" data-uri="https://timbl.solidcommunity.net/public/2020/" aria-pressed="false">2020</button>
-</div>
-<pos-app>
-  <div id="pos-pane" role="region" aria-label="Folder contents" aria-live="polite"></div>
-</pos-app>
-</xmp>
-
+<h2>3. Listen once; drop the instance ci built into the DOM</h2>
 <xmp>
 <script>
-  var posBtns = function () { return Array.prototype.slice.call(document.querySelectorAll('#pos-folders button')); };
+  var photoBtns = function () { return Array.prototype.slice.call(document.querySelectorAll('#pos-photos button')); };
 
   document.addEventListener('interop:activate', function (e) {
-    if (e.detail.handler !== 'pos-resource') return;
-    var res = e.detail.element;
-    res.innerHTML = '<pos-container-contents></pos-container-contents>';
-    document.getElementById('pos-pane').replaceChildren(res);
-    posBtns().forEach(function (b) { b.setAttribute('aria-pressed', String(b === e.detail.source)); });
+    if (e.detail.handler !== 'pos-image') return;
+    document.getElementById('pos-pane').replaceChildren(e.detail.element);   // that's the whole job
+    photoBtns().forEach(function (b) { b.setAttribute('aria-pressed', String(b === e.detail.source)); });
   });
 </script>
 </xmp>

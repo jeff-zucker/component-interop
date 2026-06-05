@@ -14,7 +14,8 @@
 
   <!-- The headline ci move: one script loads a component library (PodOS,
        @pod-os/elements via pod-os.manifest.json) AND ci's own handler. The handler
-       turns the data-handler buttons below into a live PodOS folder browser. -->
+       turns each data-handler button below into a live PodOS <pos-image> dropped
+       straight into the page — data-handler's whole point: direct DOM insertion. -->
   <script src="../../component-interop.js"
           data-stage="local"
           data-manifest="pod-os.manifest.json"
@@ -35,19 +36,26 @@
       font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     pre code { background: none; padding: 0; }
 
+    /* The picker paragraph sits at left, the narrow live demo to its right. */
+    .picker-row { display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap; margin: 0 0 1.5rem; }
+    .picker-row > p { flex: 1 1 18rem; margin: 0; }
     /* The live demo is a mini version of the whole page: dark surround, white content. */
-    .live { background: #2f333d; border-radius: 8px; padding: 1rem; margin: 0 0 1.5rem; }
+    .live { background: #2f333d; border-radius: 8px; padding: .75rem; flex: 0 0 auto; width: 13rem; }
     .live pos-app { display: block; }
     .mini-tabs { display: flex; gap: .25rem; border-bottom: 2px solid #5b6270; }
-    .mini-tabs button { font: inherit; font-size: 1rem; cursor: pointer;
+    .mini-tabs button { font: inherit; font-size: .85rem; cursor: pointer;
       background: #4b515e; color: #e6e8ec; border: 1px solid #5b6270; border-bottom: none;
-      border-radius: 8px 8px 0 0; padding: .3rem .85rem; margin-bottom: -2px; }
+      border-radius: 8px 8px 0 0; padding: .25rem .5rem; margin-bottom: -2px; }
     .mini-tabs button[aria-pressed="true"] { background: #fff; color: #1a1a1a;
       border-color: #5b6270; border-bottom: 2px solid #fff; font-weight: 600; }
     .mini-tabs button:focus-visible { outline: 2px solid #2a5db0; outline-offset: 2px; }
     #pos-pane { background: #fff; color: #1a1a1a; border: 1px solid #5b6270; border-top: none;
-      border-radius: 0 0 8px 8px; padding: .75rem 1rem;
-      max-height: 13rem; overflow: auto; overflow-wrap: anywhere; }
+      border-radius: 0 0 8px 8px; padding: .5rem; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; }
+    /* pos-image sizes its shadow <img> from --width/--height/--object-fit on the
+       host, so each photo fills one fixed box uniformly whatever its native size. */
+    #pos-pane pos-image { display: block; width: 100%;
+      --width: 100%; --height: 9rem; --object-fit: cover; --border-radius: 4px; }
   </style>
 </head>
 <body>
@@ -59,17 +67,34 @@
 <li> a single attribute that can be used on any element on any page: data-handler
 <li> a single named emited signal 'interop:activate' which can be listened for when using data-handler
 </ol>
-<p>The tabset below is created using the component-interop supplied data-handler attribute on ordinary buttons to display PodOs components in the tabs. See details in the "view code" button.</p>
+<div class="picker-row">
+<p>The picker at right uses the <code>data-handler</code> attribute on ordinary buttons to create a tabset that display the PodOS component <code>pos-image</code>.  See "view code" for details.
 
 <div class="live">
-  <div class="mini-tabs" role="group" aria-label="Pod folders" id="pos-folders">
-    <button type="button" data-handler="pos-resource" data-uri="https://timbl.solidcommunity.net/public/"      aria-pressed="true">Public</button>
-    <button type="button" data-handler="pos-resource" data-uri="https://timbl.solidcommunity.net/public/2018/" aria-pressed="false">2018</button>
-    <button type="button" data-handler="pos-resource" data-uri="https://timbl.solidcommunity.net/public/2020/" aria-pressed="false">2020</button>
-  </div>
   <pos-app>
-    <div id="pos-pane" role="region" aria-label="Folder contents" aria-live="polite"></div>
+    <div class="mini-tabs" role="group" aria-label="Pod photos" id="pos-photos">
+      <button type="button"
+              data-handler="pos-image"
+              data-src="https://timbl.solidcommunity.net/profile/TBL%20by%20coz%20Solid%20purple.png"
+              data-alt="Tim Berners-Lee"
+              aria-pressed="true"
+      >Tim</button>
+      <button type="button"
+              data-handler="pos-image"
+              data-src="https://angelo.veltens.org/profile/me.jpg"
+              data-alt="Angelo Veltens"
+              aria-pressed="false"
+      >Angelo</button>
+      <button type="button"
+              data-handler="pos-image"
+              data-src="https://virginiabalseiro.com/assets/images/profile.jpg"
+              data-alt="Virginia Balseiro"
+              aria-pressed="false"
+      >Virginia</button>
+    </div>
+    <div id="pos-pane" role="region" aria-label="Selected photo" aria-live="polite"></div>
   </pos-app>
+</div>
 </div>
 
 <script>
@@ -80,23 +105,22 @@
       '<code>python3 -m http.server 8080</code> from the directory above ' +
       '<code>component-interop/</code>.</p>';
   } else {
-    var posBtns = function () { return Array.prototype.slice.call(document.querySelectorAll('#pos-folders button')); };
+    var photoBtns = function () { return Array.prototype.slice.call(document.querySelectorAll('#pos-photos button')); };
 
-    // ci's handler built the <pos-resource> (data-uri → uri); we place it in the pane.
+    // ci's handler built the <pos-image> (data-src → src, data-alt → alt); all we
+    // do is drop the instance straight into the pane — no library-specific nesting.
     document.addEventListener('interop:activate', function (e) {
-      if (e.detail.handler !== 'pos-resource') return;
-      var res = e.detail.element;
-      res.innerHTML = '<pos-container-contents></pos-container-contents>';
-      document.getElementById('pos-pane').replaceChildren(res);
-      posBtns().forEach(function (b) { b.setAttribute('aria-pressed', String(b === e.detail.source)); });
+      if (e.detail.handler !== 'pos-image') return;
+      document.getElementById('pos-pane').replaceChildren(e.detail.element);
+      photoBtns().forEach(function (b) { b.setAttribute('aria-pressed', String(b === e.detail.source)); });
     });
 
-    // Open the first folder once ci's handler is live (it auto-loads at DOM-ready).
-    var openFolder = function () { var b = posBtns()[0]; if (b) b.click(); };
+    // Show the first photo once ci's handler is live (it auto-loads at DOM-ready).
+    var showFirst = function () { var b = photoBtns()[0]; if (b) b.click(); };
     var ci = window.ComponentInterop;
-    if (ci && ci.has && ci.has('data-handler')) openFolder();
+    if (ci && ci.has && ci.has('data-handler')) showFirst();
     else document.addEventListener('interop:capability', function (e) {
-      if (e.detail.name === 'data-handler') openFolder();
+      if (e.detail.name === 'data-handler') showFirst();
     }, { once: true });
   }
 </script>
