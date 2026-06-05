@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>solpos — Forms: a PodOS page gains Solid Web Components editing</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css">
+
+  <!-- component-interop pulls in PodOS (its descriptor) and Solid Web Components
+       (its manifest). data-extend-with="rdf" loads swc's editing capability, so
+       a plain element on this PodOS page becomes a form from a SHACL shape. -->
+  <script src="../../component-interop.js"
+          data-stage="local"
+          data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-bundles="@pod-os/elements"
+          data-extend-with="rdf"
+  ></script>
+
+  <style>
+    :root { color-scheme: light; }
+    html, body { background: #ffffff; color: #1a1a1a; }
+    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    h1    { font-size: 1.5rem; }
+    .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
+             padding: 1rem 1.25rem; color: #1a1a1a; }
+    .note { background: #f3f6fa; border: 1px solid #c9d3df; border-radius: 6px;
+            padding: .75rem 1rem; font-size: .92rem; color: #1a1a1a; margin-top: 1rem; }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1.25rem 0; background: #fff; }
+    .card h2 { font-size: 1.05rem; margin: 0 0 .75rem; }
+    code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
+    pos-container-contents { display: block; max-height: 12em; overflow-y: auto; margin: 0; }
+  </style>
+</head>
+<body>
+
+<h1>Forms — a PodOS page, gaining Solid Web Components editing</h1>
+
+<div class="intro">
+  PodOS displays a resource. Because component-interop also loaded Solid Web Components'
+  <code>rdf</code> capability, a plain <code>&lt;div&gt;</code> next to it becomes an
+  <strong>editor generated from a SHACL shape</strong> — <code>data-edit-shape</code> +
+  <code>data-subject</code> + <code>data-edit-mode</code>, no component code. swc and PodOS read
+  the same RDF; the form edits the very data PodOS shows.
+</div>
+
+<div class="card">
+  <h2>PodOS shows the resource</h2>
+  <pos-app>
+    <pos-resource uri="../../../solid-web-components/examples/sample-profile.ttl">
+      <pos-container-contents></pos-container-contents>
+    </pos-resource>
+  </pos-app>
+</div>
+
+<div class="card">
+  <h2>Solid Web Components edits it — a form from a shape</h2>
+  <div data-edit-shape="../../../solid-web-components/examples/profile.shape.ttl"
+       data-subject="../../../solid-web-components/examples/sample-profile.ttl#me"
+       data-edit-mode="collected"
+       label="Profile"
+  ></div>
+  <sol-settings></sol-settings>
+  <p class="note">
+    The plain <code>&lt;div&gt;</code> never had to be a component — the capability supplied the
+    behaviour, and <code>&lt;sol-settings&gt;</code> gathers the editor into a panel. (Saving needs
+    write access; against this static sample it renders and edits the form — the PUT is what a real
+    pod would accept. The <strong>Auth</strong> tab supplies the session that makes a save land.)
+  </p>
+</div>
+
+<pre id="demo-code" hidden>
+&lt;script src="component-interop.js"
+        data-stage="local"
+        data-manifest="sol-loader.manifest.json pod-os.manifest.json"
+        data-bundles="@pod-os/elements"
+        data-extend-with="rdf"
+&gt;&lt;/script&gt;
+
+&lt;pos-app&gt;&lt;pos-resource uri="sample-profile.ttl"&gt;&lt;/pos-resource&gt;&lt;/pos-app&gt;
+
+&lt;!-- a plain div becomes a form generated from a SHACL shape --&gt;
+&lt;div data-edit-shape="profile.shape.ttl"
+     data-subject="sample-profile.ttl#me"
+     data-edit-mode="collected"
+     label="Profile"
+&gt;&lt;/div&gt;
+&lt;sol-settings&gt;&lt;/sol-settings&gt;
+</pre>
+<pre id="demo-manifests" hidden>
+# solid-web-components manifest — the rdf capability swc ships
+# (no channel here — data-extend-with="rdf" just loads code + turns on the attributes)
+{
+  "capabilities": {
+    "rdf": {
+      "modules": ["solid-logic", "solid-ui", "sol-form", "sol-settings", "…"],
+      "attributes": ["data-edit-shape", "data-edit-mode", "data-subject", "data-from-rdf"]
+    }
+  }
+}
+</pre>
+<script type="module" src="view-code.js"></script>
+
+</body>
+</html>

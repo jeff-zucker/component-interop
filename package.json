@@ -1,0 +1,38 @@
+{
+  "name": "component-interop",
+  "version": "0.1.0",
+  "description": "A small, zero-dependency capability broker for web components — let independently-authored component libraries share a store, a session, and capabilities without importing each other.",
+  "type": "module",
+  "main": "component-interop.js",
+  "exports": {
+    ".": "./component-interop.js",
+    "./component-interop.js": "./component-interop.js"
+  },
+  "files": [
+    "component-interop.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage --test-coverage-exclude='tests/**'",
+    "test:plain": "node --test"
+  },
+  "keywords": [
+    "web-components",
+    "custom-elements",
+    "interop",
+    "importmap",
+    "manifest",
+    "capability",
+    "broker",
+    "loader",
+    "esm"
+  ],
+  "author": "Jeff Zucker",
+  "comment": "portions built using Claude Opus 4.8",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeff-zucker/component-interop"
+  }
+}

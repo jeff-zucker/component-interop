@@ -1,0 +1,1 @@
+{ "name": "provider-b", "imports": { "provider-b": "./provider-b.js" }, "interop": { "provides": { "greeting": { "event": "b:hello", "path": "detail.name" } } } }

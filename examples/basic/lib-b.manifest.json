@@ -1,0 +1,9 @@
+{
+  "name": "lib-b",
+  "imports": { "lib-b": "./lib-b.js" },
+  "interop": {
+    "consumes": {
+      "greeting": { "call": "showGreeting" }
+    }
+  }
+}

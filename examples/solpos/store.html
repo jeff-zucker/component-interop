@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>solpos — Shared Store: PodOS and Solid Web Components on one RDF graph</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css">
+
+  <!-- component-interop wires the rdf capability: PodOS PROVIDES its RDF store
+       (pod-os:loaded → os.store.internalStore); swc CONSUMES it (rdf.useStore). We
+       load swc's rdf core FIRST so its consumer is registered before PodOS fires
+       pod-os:loaded — then swc adopts PodOS's store and both read one graph. -->
+  <script src="../../component-interop.js"
+          data-stage="local"
+          data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-bundles="solid-web-components/core/rdf.js @pod-os/elements"
+          data-extend-with="rdf"
+  ></script>
+
+  <style>
+    :root { color-scheme: light; }
+    html, body { background: #ffffff; color: #1a1a1a; }
+    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    h1    { font-size: 1.5rem; }
+    .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
+             padding: 1rem 1.25rem; color: #1a1a1a; }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1.25rem 0; background: #fff; }
+    .card h2 { font-size: 1.05rem; margin: 0 0 .75rem; }
+    code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
+    pos-container-contents { display: block; max-height: 10em; overflow-y: auto; margin: 0; }
+    table.proof { border-collapse: collapse; width: 100%; }
+    table.proof th, table.proof td { text-align: left; padding: .35rem .6rem; border-bottom: 1px solid #eee; }
+    table.proof th { color: #555; font-weight: 600; width: 60%; }
+    .ok { color: #1a6e1a; font-weight: 600; } .no { color: #a11; font-weight: 600; }
+    .status { color: #555; font-size: .9rem; }
+    button { font: inherit; padding: .4rem .8rem; border: 1px solid #b9ccea; border-radius: 6px;
+             background: #eef4ff; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<h1>Shared Store — two libraries, one RDF graph</h1>
+
+<div class="intro">
+  The broker pairs PodOS's <code>provides: rdf</code> with Solid Web Components'
+  <code>consumes: rdf.useStore</code>: PodOS hands over its <code>internalStore</code> and swc
+  <strong>adopts it</strong>, so both libraries read and write <strong>the same rdflib graph</strong>
+  — no glue code. PodOS loads a resource below; the panel underneath reports the live graph as swc
+  sees it.
+</div>
+
+<div class="card">
+  <h2>PodOS loads a resource into the store</h2>
+  <pos-app>
+    <pos-resource uri="https://timbl.solidcommunity.net/profile/card">
+      <pos-container-contents></pos-container-contents>
+    </pos-resource>
+  </pos-app>
+</div>
+
+<div class="card">
+  <h2>The same graph, as Solid Web Components sees it</h2>
+  <table class="proof">
+    <tbody>
+      <tr><th>swc <code>rdf</code> service present</th><td id="swc-present">—</td></tr>
+      <tr><th>PodOS store handed to the broker</th><td id="podos-present">—</td></tr>
+      <tr><th>swc's store <em>is</em> PodOS's store (one object)</th><td id="same">—</td></tr>
+      <tr><th>Triples, counted via swc</th><td id="swc-count">—</td></tr>
+      <tr><th>Triples, counted via PodOS</th><td id="podos-count">—</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <button id="load-more" type="button">Load more data via Solid Web Components</button>
+    <span class="status" id="status"></span>
+  </p>
+  <p class="status">If the two counts move together when either library loads data, they are the one
+    graph the broker shared.</p>
+</div>
+
+<script type="module">
+  const ci = window.ComponentInterop;
+  const el = (id) => document.getElementById(id);
+  let podosStore = null;
+
+  document.addEventListener('pod-os:loaded', (e) => {
+    try { podosStore = (e && e.detail && e.detail.os && e.detail.os.store && e.detail.os.store.internalStore) || null; } catch (_) {}
+    report();
+  });
+  document.addEventListener('pod-os:resource-loaded', report);
+
+  const swcService = () => { try { return ci && ci.services && ci.services.get('rdf'); } catch (_) { return null; } };
+  function count(store) {
+    if (!store) return null;
+    if (Array.isArray(store.statements)) return store.statements.length;
+    if (typeof store.length === 'number') return store.length;
+    return '?';
+  }
+  function mark(id, ok, text) { const n = el(id); n.textContent = text; n.className = ok ? 'ok' : 'no'; }
+
+  function report() {
+    const svc = swcService();
+    const swcStore = svc && svc.store;
+    mark('swc-present', !!svc, svc ? 'yes' : 'no');
+    mark('podos-present', !!podosStore, podosStore ? 'yes' : 'no');
+    if (swcStore && podosStore) mark('same', swcStore === podosStore, swcStore === podosStore ? '✓ same object' : '✗ different objects');
+    else el('same').textContent = '—';
+    el('swc-count').textContent = count(swcStore) ?? '—';
+    el('podos-count').textContent = count(podosStore) ?? '—';
+  }
+
+  // Refresh for a while as PodOS + swc settle over the network.
+  let n = 0; const timer = setInterval(() => { report(); if (++n > 25) clearInterval(timer); }, 1000);
+
+  el('load-more').addEventListener('click', async () => {
+    const svc = swcService();
+    if (svc && typeof svc.load === 'function') {
+      el('status').textContent = 'loading https://timbl.solidcommunity.net/profile/ via swc…';
+      try { await svc.load('https://timbl.solidcommunity.net/profile/'); } catch (_) {}
+      report();
+      el('status').textContent = 'loaded — the counts above moved together.';
+    } else {
+      el('status').textContent = 'swc rdf service not ready yet.';
+    }
+  });
+  report();
+</script>
+
+<pre id="demo-code" hidden>
+&lt;!-- Load swc's rdf core BEFORE PodOS so swc's rdf.useStore consumer is
+     registered before pod-os:loaded fires --&gt;
+&lt;script src="component-interop.js"
+        data-stage="local"
+        data-manifest="sol-loader.manifest.json pod-os.manifest.json"
+        data-bundles="solid-web-components/core/rdf.js @pod-os/elements"
+        data-extend-with="rdf"
+&gt;&lt;/script&gt;
+
+&lt;!-- PodOS loads a resource into its rdflib store --&gt;
+&lt;pos-app&gt;
+  &lt;pos-resource uri="https://timbl.solidcommunity.net/profile/card"&gt;&lt;/pos-resource&gt;
+&lt;/pos-app&gt;
+
+&lt;!-- swc has adopted that very graph (rdf.useStore): --&gt;
+&lt;script type="module"&gt;
+  const { store } = ComponentInterop.services.get('rdf');
+  // `store` IS PodOS's internalStore — same object, same triples
+&lt;/script&gt;
+</pre>
+<pre id="demo-manifests" hidden>
+# pod-os.manifest.json — PodOS hands over its store
+{
+  "interop": {
+    "provides": { "store": { "event": "pod-os:loaded", "path": "detail.os.store.internalStore" } }
+  }
+}
+
+# solid-web-components manifest — swc adopts it (calls its rdf.useStore handler)
+{
+  "interop": {
+    "consumes": { "store": { "call": "rdf.useStore" } }
+  }
+}
+</pre>
+<script type="module" src="view-code.js"></script>
+
+</body>
+</html>

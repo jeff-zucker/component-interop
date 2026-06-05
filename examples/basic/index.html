@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>component-interop — basic broker demo</title>
+
+  <!-- One loader, two independent libraries described by their own manifests.
+       No default sibling manifest (this is the broker itself, not a library), so
+       data-manifest-default="off"; both libs' manifests are listed in data-manifest
+       and their modules in data-bundles. -->
+  <script src="../../component-interop.js"
+          data-manifest-default="off"
+          data-manifest="lib-a.manifest.json lib-b.manifest.json"
+          data-bundles="lib-a lib-b"></script>
+
+  <style>
+    body { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 40rem; }
+    .box { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+    code { background: #eef; padding: 0 .25rem; border-radius: 3px; }
+    greeting-box { font-size: 1.4rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<h1>component-interop — the broker, with two toy libraries</h1>
+
+<p><strong>lib-a</strong> and <strong>lib-b</strong> are separate libraries that never import each
+other and share no glue script. lib-a's manifest says it <em>provides</em> a <code>greeting</code>
+capability (via its <code>liba:hello</code> event); lib-b's manifest says it <em>consumes</em>
+<code>greeting</code> (via a registered <code>showGreeting</code> handler). The broker pairs them.</p>
+
+<div class="box">
+  <name-input></name-input>      <!-- from lib-a -->
+</div>
+
+<div class="box">
+  <greeting-box></greeting-box>  <!-- from lib-b -->
+</div>
+
+<p>Type in lib-a's input → lib-b's box updates. Zero dependencies, no bridge code.</p>
+
+</body>
+</html>

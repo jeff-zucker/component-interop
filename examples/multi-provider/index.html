@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8">
+<title>component-interop — multi-provider preference</title>
+<!-- Two libraries provide "greeting"; data-prefer picks provider-b. -->
+<script src="../../component-interop.js"
+        data-manifest-default="off"
+        data-manifest="provider-a.manifest.json provider-b.manifest.json consumer.manifest.json"
+        data-bundles="provider-a provider-b consumer"
+        data-prefer='{"greeting":"provider-b"}'></script>
+<style>body{font:16px system-ui;margin:2rem} greeting-box{font-weight:600}</style>
+</head><body>
+<h1>Two providers, one chosen by data-prefer</h1>
+<provider-a></provider-a> &nbsp; <provider-b></provider-b>
+<p><greeting-box></greeting-box></p>
+</body></html>

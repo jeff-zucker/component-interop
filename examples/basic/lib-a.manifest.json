@@ -1,0 +1,9 @@
+{
+  "name": "lib-a",
+  "imports": { "lib-a": "./lib-a.js" },
+  "interop": {
+    "provides": {
+      "greeting": { "event": "liba:hello", "path": "detail.name" }
+    }
+  }
+}

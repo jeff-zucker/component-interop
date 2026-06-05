@@ -1,0 +1,9 @@
+node_modules/
+notes.md
+drafts/
+.claude/settings.local.json
+
+# editor temp files
+*~
+\#*#
+.#*

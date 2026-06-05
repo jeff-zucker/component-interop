@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>solpos — Auth: a Solid Web Components login, shared with PodOS</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css">
+
+  <!-- component-interop loads PodOS (its descriptor) and Solid Web Components (its
+       manifest). data-extend-with="auth" loads swc's <sol-login>; sol-include is a
+       bundle. Logging in with sol-login establishes the session both sides try to
+       read your pod's /private/ with. -->
+  <script src="../../component-interop.js"
+          data-stage="local"
+          data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-bundles="sol-include @pod-os/elements"
+          data-extend-with="auth"
+  ></script>
+
+  <style>
+    :root { color-scheme: light; }
+    html, body { background: #ffffff; color: #1a1a1a; }
+    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    h1    { font-size: 1.5rem; }
+    .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
+             padding: 1rem 1.25rem; color: #1a1a1a; }
+    .note { background: #f3f6fa; border: 1px solid #c9d3df; border-radius: 6px;
+            padding: .75rem 1rem; font-size: .92rem; color: #1a1a1a; margin-top: 1rem; }
+    .bar  { display: flex; align-items: center; gap: 1rem; margin: 1.25rem 0; flex-wrap: wrap; }
+    .status { color: #555; font-size: .95rem; }
+    .cols { display: flex; gap: 1.5rem; }
+    .col  { flex: 1 1 0; min-width: 0; border: 1px solid #ccc; border-radius: 8px;
+            padding: 1rem; background: #fff; }
+    .col h2 { font-size: 1.05rem; margin: 0 0 .25rem; }
+    .col .cap { margin: 0 0 1rem; color: #555; font-size: .9rem; }
+    code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
+    sol-include, pos-container-contents { display: block; max-height: 14em; overflow: auto; }
+    sol-include[raw] { white-space: pre-wrap; font: 13px/1.4 ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+
+<h1>Auth — one login, shared across two libraries</h1>
+
+<div class="intro">
+  Sign in with Solid Web Components' <code>&lt;sol-login&gt;</code> (pick an issuer). On login this
+  page reads <strong>your pod's <code>/private/</code></strong> two ways: swc's
+  <code>&lt;sol-include&gt;</code> fetches it with the <code>&lt;sol-login&gt;</code> session, and
+  PodOS's <code>&lt;pos-resource&gt;</code> is pointed at the same URL. The swc side proves the
+  session is shared; whether the PodOS side picks it up is shown below.
+</div>
+
+<div class="bar">
+  <sol-login visible
+             issuers="https://solidcommunity.net,https://solidweb.me,https://solidweb.org"
+  ></sol-login>
+  <span class="status" id="status">Not signed in — pick an issuer and log in.</span>
+</div>
+
+<div class="cols">
+  <div class="col">
+    <h2>Solid Web Components</h2>
+    <p class="cap"><code>&lt;sol-include raw&gt;</code> fetches <code>/private/</code> with the
+      sol-login session.</p>
+    <sol-include id="swc-priv" raw></sol-include>
+  </div>
+
+  <div class="col">
+    <h2>PodOS</h2>
+    <p class="cap"><code>&lt;pos-resource&gt;</code> pointed at the same <code>/private/</code>.</p>
+    <pos-app>
+      <pos-resource id="pos-priv">
+        <pos-container-contents></pos-container-contents>
+      </pos-resource>
+    </pos-app>
+  </div>
+</div>
+
+<p class="note" id="caveat">
+  Note: PodOS's <code>&lt;pos-app&gt;</code> manages its own session and exposes no hook to adopt an
+  outside fetch, and swc's login patches rdflib's <code>Fetcher</code> (not global <code>fetch</code>).
+  So the swc side is the reliable proof that the session is shared; the PodOS side may still prompt
+  for its own login depending on how it fetches. component-interop wires what each library
+  <em>declares</em> — it can't reach past an API a library doesn't offer.
+</p>
+
+<script type="module">
+  // On login, derive the pod root from the WebID origin and point both libraries
+  // at /private/ on that pod. sol-include reloads on `source` change; pos-resource
+  // reloads on `uri` change.
+  document.addEventListener('sol-login', (e) => {
+    const webId = e.detail && e.detail.webId;
+    if (!webId) return;
+    let priv;
+    try { priv = new URL(webId).origin + '/private/'; }
+    catch (_) { return; }
+    document.getElementById('status').textContent = `Signed in as ${webId} — loading ${priv}`;
+    document.getElementById('swc-priv').setAttribute('source', priv);
+    document.getElementById('pos-priv').setAttribute('uri', priv);
+  });
+  document.addEventListener('sol-logout', () => {
+    document.getElementById('status').textContent = 'Signed out.';
+    document.getElementById('swc-priv').removeAttribute('source');
+    document.getElementById('pos-priv').removeAttribute('uri');
+  });
+</script>
+
+<pre id="demo-code" hidden>
+&lt;script src="component-interop.js"
+        data-stage="local"
+        data-manifest="sol-loader.manifest.json pod-os.manifest.json"
+        data-bundles="sol-include @pod-os/elements"
+        data-extend-with="auth"
+&gt;&lt;/script&gt;
+
+&lt;sol-login issuers="https://solidcommunity.net,https://solidweb.me,https://solidweb.org"&gt;&lt;/sol-login&gt;
+
+&lt;sol-include id="swc-priv" raw&gt;&lt;/sol-include&gt;
+&lt;pos-app&gt;&lt;pos-resource id="pos-priv"&gt;&lt;/pos-resource&gt;&lt;/pos-app&gt;
+
+&lt;!-- on login, point both at the pod's /private/ --&gt;
+&lt;script type="module"&gt;
+  document.addEventListener('sol-login', (e) =&gt; {
+    const priv = new URL(e.detail.webId).origin + '/private/';
+    document.getElementById('swc-priv').setAttribute('source', priv);
+    document.getElementById('pos-priv').setAttribute('uri', priv);
+  });
+&lt;/script&gt;
+</pre>
+<pre id="demo-manifests" hidden>
+# solid-web-components manifest — the auth capability (loads sol-login) + the session it shares
+{
+  "capabilities": {
+    "auth": { "modules": ["solid-web-components/core/inrupt-global.js", "sol-login"] }
+  },
+  "interop": {
+    "provides": { "auth": { "service": "auth", "path": "fetch" } },
+    "consumes": { "auth": { "call": "adoptFetch" } }
+  }
+}
+</pre>
+<script type="module" src="view-code.js"></script>
+
+</body>
+</html>

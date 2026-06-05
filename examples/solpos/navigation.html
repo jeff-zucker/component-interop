@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>solpos — Shared Navigation: PodOS follows Solid Web Components</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css">
+
+  <!-- component-interop loads Solid Web Components (its manifest) and PodOS (a local
+       descriptor) and wires their resource channels together — no glue code.
+       Browse in sol-pod on the left; PodOS on the right follows the same resource. -->
+  <script src="../../component-interop.js"
+          data-stage="local"
+          data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-bundles="sol-pod @pod-os/elements"
+  ></script>
+
+  <style>
+    :root { color-scheme: light; }
+    html, body { background: #ffffff; color: #1a1a1a; }
+    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    h1    { font-size: 1.5rem; }
+    .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
+             padding: 1rem 1.25rem; color: #1a1a1a; }
+    .cols { display: flex; gap: 1.5rem; margin-top: 1.5rem; }
+    .col  { flex: 1 1 0; min-width: 0; border: 1px solid #ccc; border-radius: 8px;
+            padding: 1rem; background: #fff; }
+    .col h2  { font-size: 1.05rem; margin: 0 0 .25rem; color: #1a1a1a; }
+    .col .cap { margin: 0 0 1rem; color: #555; font-size: .9rem; }
+    code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
+    sol-pod, pos-container-contents { display: block; max-height: 12em; overflow-y: auto; }
+  </style>
+</head>
+<body>
+
+<h1>Shared Navigation — open a resource once, both libraries follow</h1>
+
+<div class="intro">
+  component-interop loads <strong>Solid Web Components</strong> and <strong>PodOS</strong> and wires
+  their <em>resource</em> channels together — no glue code. <strong>Browse on the left; PodOS on the
+  right follows.</strong> Open a folder in the Solid Web Components browser and PodOS shows that same
+  folder. This is the broker's <em>resource</em> channel, wired from the two manifests — no capability
+  and no glue. (Sharing the underlying RDF <em>store</em> is a separate pairing — see the Shared Store tab.)
+</div>
+
+<div class="cols">
+  <div class="col">
+    <h2>Browse here — Solid Web Components</h2>
+    <p class="cap"><code>&lt;sol-pod&gt;</code> file browser. Click a folder to open it.</p>
+    <sol-pod source="https://timbl.solidcommunity.net/public/"></sol-pod>
+  </div>
+
+  <div class="col">
+    <h2>Follows along — PodOS</h2>
+    <p class="cap"><code>&lt;pos-*&gt;</code> shows whatever you open on the left.</p>
+    <pos-app>
+      <pos-resource>
+        <pos-container-contents></pos-container-contents>
+      </pos-resource>
+    </pos-app>
+  </div>
+</div>
+
+<pre id="demo-code" hidden>
+&lt;script src="component-interop.js"
+        data-stage="local"
+        data-manifest="sol-loader.manifest.json pod-os.manifest.json"
+        data-bundles="sol-pod @pod-os/elements"
+&gt;&lt;/script&gt;
+
+&lt;!-- swc's browser drives navigation --&gt;
+&lt;sol-pod source="https://timbl.solidcommunity.net/public/"&gt;&lt;/sol-pod&gt;
+
+&lt;!-- PodOS follows the same current resource via the broker's resource channel --&gt;
+&lt;pos-app&gt;
+  &lt;pos-resource&gt;
+    &lt;pos-container-contents&gt;&lt;/pos-container-contents&gt;
+  &lt;/pos-resource&gt;
+&lt;/pos-app&gt;
+</pre>
+<pre id="demo-manifests" hidden>
+# solid-web-components manifest — swc ships it; you point data-manifest at it
+{
+  "interop": {
+    "provides": { "resource": { "event": "sol-navigate", "path": "detail.url" } }
+  }
+}
+
+# pod-os.manifest.json — you ship this small descriptor
+{
+  "interop": {
+    "accepts": { "resource": { "selector": "pos-resource", "attr": "uri" } }
+  }
+}
+</pre>
+<script type="module" src="view-code.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+
+<script src="../component-interop.js"
+  data-extend-with="handler"
+></script>
+
+<script>
+customElements.define('foo-button', class extends HTMLElement {
+  connectedCallback() {
+    this.word = this.getAttribute('word');
+    this.innerHTML = '<button>' + this.word + '</button> <span></span>';
+  }
+  bracket() { this.querySelector('span').textContent = '[[[' + this.word + ']]]'; }
+});
+</script>
+
+without handler:
+<foo-button word="alpha"></foo-button>
+
+<hr>
+
+with handler:
+<foo-button word="beta" data-handler="bracket"></foo-button>
+
+<script>
+addEventListener('interop:activate', e => { if (e.detail.handler === 'bracket') e.detail.source.bracket(); });
+</script>

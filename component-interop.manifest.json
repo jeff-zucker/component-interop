@@ -1,0 +1,12 @@
+{
+  "name": "component-interop",
+  "imports": {
+    "@component-interop/handler": "./handler.js"
+  },
+  "capabilities": {
+    "handler": {
+      "modules": ["@component-interop/handler"],
+      "attributes": ["data-handler"]
+    }
+  }
+}

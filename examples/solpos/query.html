@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>solpos — Query: a PodOS page gains SPARQL from Solid Web Components</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css">
+
+  <!-- component-interop pulls in PodOS (its descriptor) and Solid Web Components
+       (its manifest), so the swc `sparql` capability becomes available on this
+       PodOS page. -->
+  <script src="../../component-interop.js"
+          data-stage="local"
+          data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-bundles="@pod-os/elements"
+          data-extend-with="sparql"
+  ></script>
+
+  <style>
+    :root { color-scheme: light; }
+    html, body { background: #ffffff; color: #1a1a1a; }
+    body  { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    h1    { font-size: 1.5rem; }
+    .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
+             padding: 1rem 1.25rem; color: #1a1a1a; }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1.25rem 0; background: #fff; }
+    .card h2 { font-size: 1.05rem; margin: 0 0 .75rem; }
+    code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
+    pos-container-contents, ul[data-from-query] { display: block; max-height: 12em; overflow-y: auto; margin: 0; }
+  </style>
+</head>
+<body>
+
+<h1>Query — a PodOS page, gaining a Solid Web Components capability</h1>
+
+<div class="intro">
+  PodOS has no SPARQL view. But because component-interop also loaded Solid Web Components'
+  <code>sparql</code> capability, any element on this page can run a query. Below, PodOS shows a
+  folder its own way; the plain <code>&lt;ul data-from-query&gt;</code> next to it lists the same
+  folder with SPARQL — one attribute, no extra component.
+</div>
+
+<div class="card">
+  <h2>PodOS</h2>
+  <pos-app>
+    <pos-resource uri="https://timbl.solidcommunity.net/public/">
+      <pos-container-contents></pos-container-contents>
+    </pos-resource>
+  </pos-app>
+</div>
+
+<div class="card">
+  <h2>A plain element with the swc <code>sparql</code> capability</h2>
+  <ul data-from-query
+      endpoint="https://timbl.solidcommunity.net/public/"
+      pattern="?folder &lt;http://www.w3.org/ns/ldp#contains&gt; ?item"
+      view="list"
+  ></ul>
+</div>
+
+<pre id="demo-code" hidden>
+&lt;script src="component-interop.js"
+        data-stage="local"
+        data-manifest="sol-loader.manifest.json pod-os.manifest.json"
+        data-bundles="@pod-os/elements"
+        data-extend-with="sparql"
+&gt;&lt;/script&gt;
+
+&lt;pos-app&gt;
+  &lt;pos-resource uri="https://timbl.solidcommunity.net/public/"&gt;
+    &lt;pos-container-contents&gt;&lt;/pos-container-contents&gt;
+  &lt;/pos-resource&gt;
+&lt;/pos-app&gt;
+
+&lt;!-- any element gains SPARQL via the data-from-query attribute --&gt;
+&lt;ul data-from-query
+    endpoint="https://timbl.solidcommunity.net/public/"
+    pattern="?folder &lt;http://www.w3.org/ns/ldp#contains&gt; ?item"
+    view="list"
+&gt;&lt;/ul&gt;
+</pre>
+<pre id="demo-manifests" hidden>
+# solid-web-components manifest — the sparql capability swc ships
+# (no channel here — data-extend-with="sparql" just loads code)
+{
+  "capabilities": {
+    "sparql": {
+      "modules": ["solid-web-components/core/from-query.js"],
+      "attributes": ["data-from-query"]
+    }
+  }
+}
+</pre>
+<script type="module" src="view-code.js"></script>
+
+</body>
+</html>
