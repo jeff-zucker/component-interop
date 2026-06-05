@@ -1,9 +1,9 @@
 {
   "name": "lib-a",
-  "imports": { "lib-a": "./lib-a.js" },
-  "interop": {
+  "components": { "lib-a": "./lib-a.js" },
+  "objects": {
     "provides": {
-      "greeting": { "event": "liba:hello", "path": "detail.name" }
+      "greeting": { "respondTo": "liba:hello", "sendValue": "detail.name" }
     }
   }
 }

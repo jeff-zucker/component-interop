@@ -1,7 +1,7 @@
 {
   "name": "lib-b",
-  "imports": { "lib-b": "./lib-b.js" },
-  "interop": {
+  "components": { "lib-b": "./lib-b.js" },
+  "objects": {
     "consumes": {
       "greeting": { "call": "showGreeting" }
     }

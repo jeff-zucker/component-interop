@@ -1,1 +1,1 @@
-{ "name": "consumer", "imports": { "consumer": "./consumer.js" }, "interop": { "consumes": { "greeting": { "call": "showGreeting" } } } }
+{ "name": "consumer", "components": { "consumer": "./consumer.js" }, "objects": { "consumes": { "greeting": { "call": "showGreeting" } } } }

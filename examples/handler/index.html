@@ -6,12 +6,11 @@
   <title>component-interop — handler capability</title>
 
   <!-- Opt into the built-in `handler` capability. The default sibling manifest
-       (component-interop.manifest.json) declares it; data-bundles loads the toy
+       (component-interop.manifest.json) declares it; data-components loads the toy
        viewer component this page activates. -->
   <script src="../../component-interop.js"
-          data-extend-with="handler"
           data-importmap-extra='{"demo-viewer":"./viewer.js"}'
-          data-bundles="demo-viewer"></script>
+          data-components="demo-viewer"></script>
 
   <style>
     body { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 42rem; }
