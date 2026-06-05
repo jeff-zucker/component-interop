@@ -13,9 +13,8 @@ provider in another library. The result is plain custom elements on a page that 
 ```html
 <script src="component-interop.js"
         data-stage="local"
-        data-bundles="my-widgets"
-        data-manifest="other-lib.manifest.json"
-        data-extend-with="auth"></script>
+        data-components="my-widgets"
+        data-manifest="other-lib.manifest.json"></script>
 ```
 
 It is a classic script (no build step needed), exposes `window.ComponentInterop`, and has **no
@@ -23,42 +22,53 @@ runtime dependencies**.
 
 ## What it does
 
-1. **Loads modules** from manifests — injects an importmap from the manifests' `imports`, then
-   `import()`s `data-bundles` + each `data-extend-with` capability's modules.
-2. **Provides a shared registry** — `ComponentInterop.services` (register / whenReady / get / has)
-   so libraries publish and discover shared services without importing each other.
-3. **Brokers capabilities** — pairs a library's `consumes` with another library's `provides` (the
-   "adopt the other library's provider" rule) and wires a shared `resource` (current-focus) channel.
-4. **Activates capability attributes** — a capability can declare `data-*` attributes that work on
-   any element; the loader warns when one is used without its capability loaded.
+A manifest's **offerings** — what you read to use a library — are **components** (elements
+to place), **attributes** (a `data-*` you use), and **objects** (a value shared
+library→library):
+
+1. **components** — injects an importmap from the manifests' `components` +
+   `shared-modules`, then `import()`s the `data-components` (or `"*"` for all).
+2. **attributes** — when a manifest-declared `data-*` appears on the page, ci **auto-loads**
+   the module(s) (or `bundle`) that power it. Nothing to declare on the page.
+3. **objects** — pairs a library's `consumes`/`accepts` with another library's
+   `provides` of the same key (the "adopt the other library's value" rule).
+4. **a shared registry** — `ComponentInterop.services` (register / whenReady / get / has)
+   so libraries publish and discover shared objects without importing each other.
 
 ## The manifest
 
+Offerings (read these to use the library) — `components`, `attributes`, `objects`; plumbing
+(only a co-author wiring shared deps reads these) — `shared-modules`, `bundles`:
+
 ```jsonc
 {
-  "name": "my-lib",                                   // library identity (required for interop)
-  "imports": { "my-widgets": "./my-widgets.js" },     // bare specifier → URL
+  "name": "my-lib",                                   // library identity (required for sharing)
+  "components":     { "my-widget": "./my-widget.js" },// placeable elements → URL (data-components / "*")
+  "shared-modules": { "rdflib": "./vendor/rdflib.js" },// deps externalized by name (importmap, deduped)
+  "bundles":        { "editing": ["solid-ui", "my-form"] }, // a logical module group
   "stages": {                                         // optional: pick with data-stage
-    "local": { "imports": { "dep": "./vendor/dep.js" } },
-    "cdn":   { "imports": { "dep": "https://esm.sh/dep" } }
+    "local": { "components": {…}, "shared-modules": { "dep": "./vendor/dep.js" } },
+    "cdn":   { "components": {…}, "shared-modules": { "dep": "https://esm.sh/dep" } }
   },
-  "capabilities": {                                   // lazy module bundles (data-extend-with)
-    "auth": { "modules": ["my-login"], "attributes": ["data-login"] }
+  "attributes": {                                     // a data-* → its module(s) or a bundle name (auto-loaded)
+    "data-login": "./my-login.js",
+    "data-edit-shape data-subject": "editing"         // space-separated keys share modules
   },
-  "interop": {
-    "provides": { "store": { "service": "store", "path": "graph" } },   // or { "event":"…","path":"…" }
-    "consumes": { "store": { "call": "adoptStore" } },                  // a registered handler name
-    "resource": {
-      "emits":   { "event": "my:navigate", "path": "detail.url" },
-      "accepts": { "selector": "other-viewer", "attr": "src", "transform": "stripHash" }
-    }
+  "objects": {
+    "provides": {                                     // offer a value (from a service or an event)
+      "store":      { "service": "store", "sendValue": "graph" },
+      "navigation": { "respondTo": "my:navigate", "sendValue": "detail.url" }
+    },
+    "consumes": { "store":      { "call": "adoptStore" } },   // adopt by calling a registered handler
+    "accepts":  { "navigation": { "onElement": "other-viewer", "applyValueTo": "src", "transform": "stripHash" } }  // adopt by setting an attr
   }
 }
 ```
 
-- A **provider** declares its delivery channel: `{ service, path }` (a registered service) or
-  `{ event, path }` (a DOM CustomEvent). `path` dot-walks into the value. An optional
-  `priority` (number, default 0) ranks it when several libraries provide the same capability.
+- A **provider** declares its source: `{ service, sendValue }` (a registered service) or
+  `{ respondTo, sendValue }` (a DOM CustomEvent; `respondTo` may be a list). `sendValue`
+  dot-walks into the value. An optional `priority` (default 0) ranks it when several
+  libraries provide the same key.
 - A **consumer** declares a **registered handler** name (`call`). The library registers it:
   ```js
   ComponentInterop.registerConsumer('adoptStore', (graph) => myStore.use(graph));
@@ -77,7 +87,7 @@ page-wide, so all of them share one store/session/current-resource with no per-p
 ```html
 <script src="component-interop.js"
         data-manifest="lib-a.manifest.json lib-b.manifest.json lib-c.manifest.json"
-        data-bundles="lib-a lib-b lib-c"
+        data-components="lib-a lib-b lib-c"
         data-prefer='{"rdf":"lib-b"}'></script>
 ```
 
@@ -104,23 +114,26 @@ Conventions that make N libraries coherent:
 
 ## `data-*` attributes (`data-base`, `data-stage`, …)
 
-- `data-bundles` — module specifiers to `import()`
-- `data-extend-with` — capability names from the merged manifests
-- `data-stage` — `local` (default) | `cdn` — picks `stages.<stage>.imports`
+- `data-components` — components/bundles to `import()` (or `*` for every component)
+- `data-stage` — `local` (default) | `cdn` — picks `stages.<stage>` (`components` + `shared-modules`)
 - `data-manifest` — extra **same-origin** manifest URLs (merged after the default; resolved against
   the page)
 - `data-manifest-default="off"` — skip the default sibling `<basename>.manifest.json`
 - `data-importmap-extra` — inline importmap JSON (manifest entries win on conflict)
 - `data-base` — base URL for resolving `data-manifest` paths
-- `data-prefer` — JSON map `capability → preferred provider library`, for multi-library pages
+- `data-prefer` — JSON map `key → preferred provider library`, for multi-library pages
 
-## The `handler` capability (any element calls a component or script)
+(There is no `data-extend-with` — attributes auto-load when their `data-*` appears on the page.)
 
-A built-in capability that lets **any** element — a library's own button/menu, a plain link —
-activate a component or a script. ci does the **wiring only**; it never decides placement. Opt in:
+## The `data-handler` attribute (any element calls a component or script)
+
+A built-in attribute that lets **any** element — a library's own button/menu, a plain link —
+activate a component or a script. ci does the **wiring only**; it never decides placement. ci's own
+manifest maps `data-handler` → `./handler.js`, so it **auto-loads** the moment a `data-handler`
+appears — nothing to opt into:
 
 ```html
-<script src="component-interop.js" data-extend-with="handler"></script>
+<script src="component-interop.js"></script>
 ```
 
 Mark any element with `data-handler` (no JS on the element — ci delegates the click/Enter):

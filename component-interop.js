@@ -8,45 +8,50 @@
  *
  *   <script src="component-interop.js"
  *           data-stage="local"
- *           data-bundles="my-widgets"
- *           data-manifest="other-lib.manifest.json"
- *           data-extend-with="auth"></script>
+ *           data-components="my-widgets"
+ *           data-manifest="other-lib.manifest.json"></script>
  *
  * On load it (1) reads its DEFAULT manifest — a sibling named after itself,
  * `<basename>.manifest.json` — plus any `data-manifest` URLs; (2) injects an
- * importmap built from the manifests' `imports` (stage chosen by `data-stage`);
- * (3) `import()`s the `data-bundles` modules + each `data-extend-with`
- * capability's modules, IN ORDER; (4) brokers the libraries' `interop` blocks;
- * then fires `interop:ready`.
+ * importmap built from the manifests' `components` (stage chosen by `data-stage`);
+ * (3) `import()`s the `data-components` modules (or all, with `data-components="*"`);
+ * (4) brokers the libraries' `objects` blocks; (5) at DOM-ready, auto-loads any
+ * `attributes` entry whose `data-*` is present; then fires `interop:ready`.
  *
- * A manifest:
- *   { "name": "…",                                            // library identity (required for interop)
- *     "imports": { spec: url, … },                           // stage-agnostic, and/or
- *     "stages": { "local": {"imports":{…}}, "cdn": {"imports":{…}} },
- *     "capabilities": { cap: { "modules": [...], "attributes": [...] } },
- *     "interop": {
- *       "provides": { cap: { service|event: "…", path: "…", priority?: n } }, // offer a value (from a service or an event)
- *       "consumes": { cap: { call: "<registered-consumer>", from?: "<lib>" } }, // adopt it by calling a handler
- *       "accepts":  { cap: { selector: "…", attr: "…", transform?: "stripHash" } } } } // adopt it by setting a DOM attribute
+ * A manifest's OFFERINGS (read these to use the library): `components` (elements to
+ * place), `attributes` (data-* you can use, auto-loaded when present), `objects`
+ * (values shared with other libraries). Its PLUMBING: `shared-modules` (deps it
+ * externalizes by name, so peers dedupe — the dep-sharing contract) and `bundles`
+ * (logical, NOT physical, module groups an attribute can point at).
+ *   { "name": "…",                                            // library identity (required for sharing)
+ *     "components":     { "my-el": url, … },                  // placeable elements → URL (data-components / "*")
+ *     "shared-modules": { "rdflib": url, … },                 // externalized deps → URL (importmap, deduped)
+ *     "bundles":        { "rdf": ["solid-ui", "sol-form", …] },// a name → module specifiers (logical group)
+ *     "stages": { "local": {"components":{…},"shared-modules":{…}}, "cdn": {…} },
+ *     "attributes": { "data-x": "./mod.js",                   // a data-* → module specifier(s) or a bundle name
+ *                     "data-a data-b": "rdf" },               // (space-separated keys share modules)
+ *     "objects": {
+ *       "provides": { key: { service|respondTo: "…", sendValue: "…", priority?: n } }, // offer a value (service or event; respondTo may be a list)
+ *       "consumes": { key: { call: "<registered-consumer>", from?: "<lib>" } }, // adopt it by calling a handler
+ *       "accepts":  { key: { onElement: "…", applyValueTo: "…", transform?: "stripHash" } } } } // adopt it by setting a DOM attribute
  * Relative import URLs resolve against THAT manifest's URL. The earlier manifest
  * wins a conflicting specifier (so a shared dep stays single). The broker pairs a
- * `consumes` OR `accepts` cap with ANOTHER library's `provides` cap of the same
- * name (the adopt rule) — so a page mixing libraries needs no bridge script. (A
- * shared "current resource" is just a key both libraries provide via an event and
- * accept onto an attribute — no special-casing.)
+ * `consumes` OR `accepts` key with ANOTHER library's `provides` key of the same
+ * name (the adopt rule) — so a page mixing libraries needs no bridge script.
  *
  * A `consumes.call` names a handler the consuming library registered via
  * `ComponentInterop.registerConsumer(name, fn)` — the broker invokes the
  * registered function, never an arbitrary string. So the broker stays ignorant
  * of any library's actual API.
  *
- * data-* attributes: data-bundles, data-extend-with, data-stage (`local`|`cdn`),
- * data-manifest (SAME-ORIGIN URLs merged after the default), data-manifest-default="off",
- * data-importmap-extra (inline importmap JSON), data-base (resolve data-manifest paths),
- * data-prefer (JSON map capability→preferred provider library, for multi-library pages).
+ * data-* attributes: data-components (specifiers, or `*` for all), data-stage
+ * (`local`|`cdn`), data-manifest (SAME-ORIGIN URLs merged after the default),
+ * data-manifest-default="off", data-importmap-extra (inline importmap JSON),
+ * data-base (resolve data-manifest paths), data-prefer (JSON map key→preferred
+ * provider library, for multi-library pages).
  *
- * API on window.ComponentInterop: ready (Promise), load(bundles,{with}), manifest,
- * loaded, version, registerCapability(name,{modules,attributes}),
+ * API on window.ComponentInterop: ready (Promise), load(components), manifest,
+ * loaded, version, registerCapability("data-x", modules),
  * registerConsumer(name,fn); the host-services registry .services
  * (register/get/has/names/whenReady) so libraries share resources without
  * importing each other; .has(name) / .capabilities; .on(name,fn) / .emit(name,detail).
@@ -70,7 +75,7 @@
   try { PREFER = JSON.parse(ds.prefer || '{}') || {}; }
   catch (e) { console.warn('[component-interop] data-prefer is not valid JSON — ignored'); }
 
-  var MANIFEST = { capabilities: {} };   // grows as manifests merge in; nothing baked
+  var MANIFEST = { components: {}, attributes: {}, bundles: {} };   // grows as manifests merge in
 
   var api = window.ComponentInterop = window.ComponentInterop || {};
   api.manifest = MANIFEST;
@@ -162,31 +167,52 @@
   api.ensureImportmap = ensureImportmap;
 
   // ── manifests ────────────────────────────────────────────────────────────
-  function mergeCapability(name, def) {
-    if (!MANIFEST.capabilities) MANIFEST.capabilities = {};
-    var existing = MANIFEST.capabilities[name];
-    var mods = (existing && existing.modules) ? existing.modules.slice() : [];
-    ((def && def.modules) || []).forEach(function (m) { if (mods.indexOf(m) === -1) mods.push(m); });
-    var attrs = (existing && existing.attributes) ? existing.attributes.slice() : [];
-    ((def && def.attributes) || []).forEach(function (a) { if (attrs.indexOf(a) === -1) attrs.push(a); });
-    MANIFEST.capabilities[name] = { modules: mods, attributes: attrs };
+  // A module specifier is resolved against THIS manifest's URL when relative
+  // (`./`, `../`, `/`, or a full URL); a bare specifier (e.g. "solid-logic") or a
+  // bundle name passes through (the importmap / bundles resolve it at load time).
+  function resolveSpec(spec, url) {
+    return /^(\.{0,2}\/|https?:)/.test(spec) ? resolveUrl(spec, url) : spec;
   }
-  api.registerCapability = function (name, def) { mergeCapability(name, def); return api; };
+  function addSpecs(into, value, url) {
+    (Array.isArray(value) ? value : [value]).forEach(function (s) {
+      if (!s) return;
+      var r = resolveSpec(s, url);
+      if (into.indexOf(r) === -1) into.push(r);
+    });
+    return into;
+  }
+  // `attributes`: a data-* (or space-separated set) → module specifier(s)/bundle name.
+  function mergeAttributes(key, value, url) {
+    MANIFEST.attributes[key] = addSpecs((MANIFEST.attributes[key] || []), value, url);
+  }
+  api.registerCapability = function (key, value) { mergeAttributes(key, value, ''); return api; };
+  // `bundles`: a logical name → a list of module specifiers (not a physical file).
+  function mergeBundle(name, value, url) {
+    MANIFEST.bundles[name] = addSpecs((MANIFEST.bundles[name] || []), value, url);
+  }
+  // `components` (placeable) + `shared-modules` (deps) → the importmap (first-wins).
+  // Only `components` keys count for data-components="*".
+  function mergeUrlMap(map, url, areComponents) {
+    if (!map) return;
+    for (var s in map) if (own(map, s) && !own(imports, s)) {
+      imports[s] = resolveUrl(map[s], url);
+      if (areComponents) MANIFEST.components[s] = imports[s];
+    }
+  }
 
   function mergeManifest(m, url) {
     if (!m) return;
-    var caps = m.capabilities || {};
-    for (var name in caps) if (own(caps, name)) mergeCapability(name, caps[name]);
-    // Collect interop declarations per LIBRARY (keyed by name) — the broker needs
-    // library identity to pair a provider with a consumer in another lib.
-    if (m.interop && m.name) interopSources.push({ name: m.name, interop: m.interop });
-    var stage = (ds.stage || 'local').trim();
-    var imp = {};
-    assign(imp, m.imports);
-    if (m.stages && m.stages[stage]) assign(imp, m.stages[stage].imports);
-    for (var s in imp) {
-      if (own(imp, s) && !own(imports, s)) imports[s] = resolveUrl(imp[s], url);
-    }
+    var staged = (m.stages && m.stages[(ds.stage || 'local').trim()]) || {};
+    mergeUrlMap(m.components, url, true);
+    mergeUrlMap(staged.components, url, true);
+    mergeUrlMap(m['shared-modules'], url, false);
+    mergeUrlMap(staged['shared-modules'], url, false);
+    var bundles = m.bundles || {};
+    for (var b in bundles) if (own(bundles, b)) mergeBundle(b, bundles[b], url);
+    var attrs = m.attributes || {};
+    for (var a in attrs) if (own(attrs, a)) mergeAttributes(a, attrs[a], url);
+    // objects: per-library shared-value declarations (keyed by library name).
+    if (m.objects && m.name) interopSources.push({ name: m.name, interop: m.objects });
   }
 
   // The default sibling (the loader's own — trusted even cross-origin) then any
@@ -242,11 +268,15 @@
     if (fn) { try { fn(value); } catch (e) { console.error('[component-interop] consumer "' + call + '" failed', e); } }
     else console.warn('[component-interop] no consumer registered for "' + call + '" (the library must call ComponentInterop.registerConsumer)');
   }
+  // A provider sources its value from an event (`respondTo`, one or many) or a
+  // registered service (`service`); `sendValue` dot-walks to the value.
   function onProvide(p, onValue) {
-    if (p.event) {
-      api.on(p.event, function (e) { var v = getByPath(e, p.path); if (v != null) onValue(v); });
+    if (p.respondTo) {
+      [].concat(p.respondTo).forEach(function (ev) {
+        api.on(ev, function (e) { var v = getByPath(e, p.sendValue); if (v != null) onValue(v); });
+      });
     } else if (p.service) {
-      api.services.whenReady(p.service).then(function (impl) { onValue(getByPath(impl, p.path)); });
+      api.services.whenReady(p.service).then(function (impl) { onValue(getByPath(impl, p.sendValue)); });
     }
   }
 
@@ -287,9 +317,7 @@
 
     // Each library adopts a value another library `provides` either by handing it
     // to a registered handler (`consumes` → call) or by writing it onto a DOM
-    // attribute (`accepts` → setAttribute). A `provides` reads from a service or an
-    // event; `onProvide` handles both. `resource` is no longer special — it's just
-    // a key some libraries both provide (an event) and accept (an attribute).
+    // attribute (`accepts` → onElement.setAttribute(applyValueTo, …)). Matched by key.
     libs.forEach(function (cLib) {
       var consumes = cLib.interop.consumes || {};
       Object.keys(consumes).forEach(function (cap) {
@@ -308,9 +336,9 @@
         var chosen = pickProvider(providersOf(cap, cLib.name), cap, a);
         if (!chosen) return;
         onProvide(chosen.prov, function (value) {
-          var el = document.querySelector(a.selector);
+          var el = document.querySelector(a.onElement);
           if (!el) return;
-          el.setAttribute(a.attr, applyTransform(value, a.transform));
+          el.setAttribute(a.applyValueTo, applyTransform(value, a.transform));
           api.emit('interop:wired', { capability: cap, from: chosen.name, to: cLib.name });
         });
       });
@@ -334,18 +362,23 @@
     api.emit('interop:capability', { name: name });
   }
 
-  function load(bundles, opts) {
-    ensureImportmap();
-    var caps = toList(opts && opts.with);
-    return importSeq(toList(bundles)).then(function () {
-      return caps.reduce(function (p, cap) {
-        return p.then(function () {
-          var c = MANIFEST.capabilities && MANIFEST.capabilities[cap];
-          if (!c) { console.warn('[component-interop] unknown capability "' + cap + '"'); return; }
-          return importSeq(c.modules || []).then(function () { markCapability(cap); });
-        });
-      }, Promise.resolve());
+  // Expand a token to its modules: a bundle name → the bundle's modules; else itself.
+  function expandModules(token) {
+    return (MANIFEST.bundles[token] || [token]).slice();
+  }
+  function expandAll(tokens) {
+    var out = [];
+    tokens.forEach(function (t) {
+      expandModules(t).forEach(function (m) { if (out.indexOf(m) === -1) out.push(m); });
     });
+    return out;
+  }
+  // Import the listed components/bundles; `*` = every placeable `components` entry.
+  function load(components) {
+    ensureImportmap();
+    var list = toList(components);
+    if (list.indexOf('*') !== -1) list = Object.keys(MANIFEST.components);
+    return importSeq(expandAll(list));
   }
   api.load = load;
 
@@ -356,21 +389,19 @@
     window.dispatchEvent(new CustomEvent('interop:ready', { detail: detail }));
   }
 
-  // Dev aid: warn when a capability's declared attribute is on the page but the
-  // capability wasn't loaded. Runs after the DOM is parsed.
-  function warnUnusedCapabilityAttrs() {
+  // Auto-load attributes: when a manifest-declared `data-*` attribute appears on
+  // the page, import the module(s) that power it. A key may be a space-separated
+  // set of attributes that share modules. Runs after the DOM is parsed.
+  function autoLoadAttributes() {
     if (typeof document === 'undefined') return;
-    var caps = MANIFEST.capabilities || {};
-    Object.keys(caps).forEach(function (name) {
-      if (api._caps[name]) return;
-      (caps[name].attributes || []).forEach(function (attr) {
-        try {
-          if (document.querySelector('[' + attr + ']')) {
-            console.warn('[component-interop] "' + attr + '" is used on the page but the "' + name +
-              '" capability is not loaded — add data-extend-with="' + name + '".');
-          }
-        } catch (e) {}
+    var sets = MANIFEST.attributes || {};
+    Object.keys(sets).forEach(function (key) {
+      if (api._caps[key]) return;
+      var present = key.split(/\s+/).filter(Boolean).some(function (attr) {
+        try { return !!document.querySelector('[' + attr + ']'); } catch (e) { return false; }
       });
+      if (!present) return;
+      importSeq(expandAll(sets[key])).then(function () { markCapability(key); });
     });
   }
   function whenDomReady(fn) {
@@ -378,15 +409,16 @@
     else fn();
   }
 
-  // Auto-load: fetch manifest(s), inject importmap, broker, then load.
-  var auto = (ds.bundles || ds.load || '').trim();
+  // Auto-load chain: fetch manifest(s), inject importmap, broker, import the
+  // `data-components`, then (at DOM-ready) auto-load attributes that appear.
+  var auto = (ds.components || ds.load || '').trim();
   loadManifests().then(function () {
     ensureImportmap();
     installInterop();   // before load(): so listeners catch provider events that
                         // fire while a library's modules import
-    return load(auto, { with: ds.extendWith });
+    return load(auto);
   }).then(function () {
     announce();
-    whenDomReady(warnUnusedCapabilityAttrs);
+    whenDomReady(autoLoadAttributes);
   });
 })();
