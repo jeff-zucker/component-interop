@@ -4,15 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>solpos — Query: a PodOS page gains SPARQL from Solid Web Components</title>
+  <title>solpos — Query: a PodOS page gains SPARQL (via Comunica) from Solid Web Components</title>
 
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
   >
 
-  <!-- component-interop pulls in PodOS (its descriptor) and Solid Web Components
-       (its manifest), so using `data-from-query` here auto-loads swc's SPARQL
-       module on this PodOS page. -->
+  <!-- component-interop loads PodOS (its descriptor) and Solid Web Components (its
+       manifest), so using `data-from-query` here auto-loads swc's SPARQL module —
+       and, on demand, Comunica (resolved by the manifest), the engine that runs a
+       real SPARQL query against a remote endpoint. -->
   <script src="../../component-interop.js"
           data-stage="local"
           data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
@@ -26,39 +27,46 @@
     h1    { font-size: 1.5rem; }
     .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; }
-    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1.25rem 0; background: #fff; }
-    .card h2 { font-size: 1.05rem; margin: 0 0 .75rem; }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.25rem; margin: 1.25rem 0; background: #fff; }
+    .card h2 { font-size: 1.05rem; margin: 0 0 .9rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
-    pos-container-contents, ul[data-from-query] { display: block; max-height: 12em; overflow-y: auto; margin: 0; }
+    /* Legibility for the SPARQL results (swc's `list` view renders <ul class="result-list">). */
+    ul[data-from-query] { list-style: none; margin: 0; padding: 0; }
+    ul.result-list { list-style: none; margin: 0; padding: 0;
+      border: 1px solid #d7dde5; border-radius: 8px; overflow: hidden;
+      max-height: 22rem; overflow-y: auto; }
+    ul.result-list li { padding: .5rem .9rem; border-top: 1px solid #eef1f5;
+      font-size: 1.02rem; overflow-wrap: anywhere; }
+    ul.result-list li:first-child { border-top: none; }
+    ul.result-list li:nth-child(even) { background: #f7f9fc; }
+    .loading { color: #57606a; font-style: italic; }
+    .error   { color: #b00020; }
   </style>
 </head>
 <body>
 
-<h1>Query — a PodOS page, gaining a Solid Web Components capability</h1>
+<h1>Query — a PodOS page, running real SPARQL through Comunica</h1>
 
 <div class="intro">
-  PodOS has no SPARQL view. But because component-interop also loaded Solid Web Components'
-  <code>sparql</code> capability, any element on this page can run a query. Below, PodOS shows a
-  folder its own way; the plain <code>&lt;ul data-from-query&gt;</code> next to it lists the same
-  folder with SPARQL — one attribute, no extra component.
+  PodOS has no SPARQL view. But component-interop also loaded Solid Web Components'
+  <code>sparql</code> capability, so any element inside this PodOS app can run a query — a real one,
+  through <b>Comunica</b> (the engine the manifest pulls in on demand, so <code>ORDER BY</code> and
+  <code>LIMIT</code> are honoured). The plain <code>&lt;ul&gt;</code> below sits inside
+  <code>&lt;pos-app&gt;</code> and, via one <code>data-from-query</code>, asks the public
+  <b>DBpedia</b> endpoint for programming languages. The class is a <b>replaceable parameter</b> —
+  <code>{{type}}</code>, filled from <code>var-type</code>.
 </div>
 
 <div class="card">
-  <h2>PodOS</h2>
+  <h2>A <code>&lt;ul&gt;</code> inside <code>&lt;pos-app&gt;</code> querying DBpedia</h2>
   <pos-app>
-    <pos-resource uri="https://timbl.solidcommunity.net/public/">
-      <pos-container-contents></pos-container-contents>
-    </pos-resource>
+    <ul data-from-query
+        endpoint="https://dbpedia.org/sparql"
+        sparql="SELECT DISTINCT ?name WHERE { ?thing a &lt;http://dbpedia.org/ontology/{{type}}&gt; ; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name . FILTER(lang(?name) = 'en') } ORDER BY ?name LIMIT 30"
+        var-type="ProgrammingLanguage"
+        view="list"
+    ></ul>
   </pos-app>
-</div>
-
-<div class="card">
-  <h2>A plain element with the swc <code>sparql</code> capability</h2>
-  <ul data-from-query
-      endpoint="https://timbl.solidcommunity.net/public/"
-      pattern="?folder &lt;http://www.w3.org/ns/ldp#contains&gt; ?item"
-      view="list"
-  ></ul>
 </div>
 
 <pre id="demo-code" hidden>
@@ -68,27 +76,20 @@
         data-components="@pod-os/elements"
 &gt;&lt;/script&gt;
 
+&lt;!-- A plain &lt;ul&gt; inside the PodOS app gains SPARQL. data-from-query runs the
+     query through Comunica against DBpedia; {{type}} is filled from var-type. --&gt;
 &lt;pos-app&gt;
-  &lt;pos-resource uri="https://timbl.solidcommunity.net/public/"&gt;
-    &lt;pos-container-contents&gt;&lt;/pos-container-contents&gt;
-  &lt;/pos-resource&gt;
+  &lt;ul data-from-query
+      endpoint="https://dbpedia.org/sparql"
+      sparql="SELECT DISTINCT ?name WHERE {
+                ?thing a &lt;http://dbpedia.org/ontology/{{type}}&gt; ;
+                       &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name .
+                FILTER(lang(?name) = 'en')
+              } ORDER BY ?name LIMIT 30"
+      var-type="ProgrammingLanguage"
+      view="list"
+  &gt;&lt;/ul&gt;
 &lt;/pos-app&gt;
-
-&lt;!-- any element gains SPARQL via the data-from-query attribute --&gt;
-&lt;ul data-from-query
-    endpoint="https://timbl.solidcommunity.net/public/"
-    pattern="?folder &lt;http://www.w3.org/ns/ldp#contains&gt; ?item"
-    view="list"
-&gt;&lt;/ul&gt;
-</pre>
-<pre id="demo-manifests" hidden>
-# solid-web-components manifest — data-from-query auto-loads the SPARQL module
-# (no object shared here — using the attribute just pulls in code on demand)
-{
-  "attributes": {
-    "data-from-query": "solid-web-components/core/from-query.js"
-  }
-}
 </pre>
 <script type="module" src="view-code.js"></script>
 
