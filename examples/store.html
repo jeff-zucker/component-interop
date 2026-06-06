@@ -16,8 +16,8 @@
        pod-os:loaded — then swc adopts PodOS's store and both read one graph. -->
   <script src="../component-interop.js"
           data-stage="local"
-          data-manifest="../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
-          data-components="solid-web-components/core/rdf.js @pod-os/elements"
+          data-manifest="../../sol-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-components="sol-components/core/rdf.js @pod-os/elements"
   ></script>
 
   <style>
@@ -134,7 +134,7 @@
 &lt;script src="component-interop.js"
         data-stage="local"
         data-manifest="sol-loader.manifest.json pod-os.manifest.json"
-        data-components="solid-web-components/core/rdf.js @pod-os/elements"
+        data-components="sol-components/core/rdf.js @pod-os/elements"
 &gt;&lt;/script&gt;
 
 &lt;!-- PodOS loads a resource into its rdflib store --&gt;
@@ -156,7 +156,7 @@
   }
 }
 
-# solid-web-components manifest — swc adopts it (calls its rdf.useStore handler)
+# sol-components manifest — swc adopts it (calls its rdf.useStore handler)
 {
   "objects": {
     "consumes": { "store": { "call": "rdf.useStore" } }

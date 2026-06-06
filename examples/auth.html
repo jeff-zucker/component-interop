@@ -16,8 +16,8 @@
        to read your pod's /private/ with. -->
   <script src="../component-interop.js"
           data-stage="local"
-          data-manifest="../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
-          data-components="solid-web-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
+          data-manifest="../../sol-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-components="sol-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
   ></script>
 
   <style>
@@ -112,7 +112,7 @@
 &lt;script src="component-interop.js"
         data-stage="local"
         data-manifest="sol-loader.manifest.json pod-os.manifest.json"
-        data-components="solid-web-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
+        data-components="sol-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
 &gt;&lt;/script&gt;
 
 &lt;sol-login issuers="https://solidcommunity.net,https://solidweb.me,https://solidweb.org"&gt;&lt;/sol-login&gt;
@@ -130,7 +130,7 @@
 &lt;/script&gt;
 </pre>
 <pre id="demo-manifests" hidden>
-# solid-web-components manifest — sol-login is a plain component; it shares the session
+# sol-components manifest — sol-login is a plain component; it shares the session
 {
   "components": { "sol-login": "../web/sol-login.js" },
   "objects": {

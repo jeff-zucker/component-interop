@@ -57,8 +57,8 @@ and **Auth** also share an *object*.
 
 ## Run them
 
-The pages reach into a sibling `solid-web-components/` checkout, so serve the folder
-that contains **both** `component-interop/` and `solid-web-components/`:
+The pages reach into a sibling `sol-components/` checkout, so serve the folder
+that contains **both** `component-interop/` and `sol-components/`:
 
 ```
 python3 -m http.server 8080

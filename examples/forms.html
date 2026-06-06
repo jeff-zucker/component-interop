@@ -15,7 +15,7 @@
        so a plain element on this PodOS page becomes a form from a SHACL shape. -->
   <script src="../component-interop.js"
           data-stage="local"
-          data-manifest="../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-manifest="../../sol-components/dist/sol-loader.manifest.json pod-os.manifest.json"
           data-components="@pod-os/elements"
   ></script>
 
@@ -49,7 +49,7 @@
 <div class="card">
   <h2>PodOS shows the resource</h2>
   <pos-app>
-    <pos-resource uri="../../solid-web-components/examples/sample-profile.ttl">
+    <pos-resource uri="../../sol-components/examples/sample-profile.ttl">
       <pos-container-contents></pos-container-contents>
     </pos-resource>
   </pos-app>
@@ -57,8 +57,8 @@
 
 <div class="card">
   <h2>Solid Web Components edits it — a form from a shape</h2>
-  <div data-edit-shape="../../solid-web-components/examples/profile.shape.ttl"
-       data-subject="../../solid-web-components/examples/sample-profile.ttl#me"
+  <div data-edit-shape="../../sol-components/examples/profile.shape.ttl"
+       data-subject="../../sol-components/examples/sample-profile.ttl#me"
        data-edit-mode="collected"
        label="Profile"
   ></div>
@@ -89,7 +89,7 @@
 &lt;sol-settings&gt;&lt;/sol-settings&gt;
 </pre>
 <pre id="demo-manifests" hidden>
-# solid-web-components manifest — the data-edit-* attributes auto-load a bundle
+# sol-components manifest — the data-edit-* attributes auto-load a bundle
 # (no object shared here — using the attributes just pulls in code on demand)
 {
   "bundles": {

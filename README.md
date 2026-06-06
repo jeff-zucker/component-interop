@@ -194,7 +194,7 @@ library-provided **registry**, never `eval`'d from a manifest string.
   a component (ci instantiates it) or a script, and one `interop:activate` listener places the result.
 - `examples/multi-provider/` — two libraries provide the same capability; `data-prefer` chooses which
   one the consumer adopts (the multi-provider preference rule).
-- `examples/solpos/` — two real libraries, [Solid Web Components](https://github.com/jeff-zucker/solid-web-components)
+- `examples/solpos/` — two real libraries, [Solid Web Components](https://github.com/jeff-zucker/sol-components)
   and [PodOS](https://github.com/pod-os/PodOS), working together on one page: browse a pod in one and
   the other follows, and a PodOS page gaining SPARQL from an swc capability. (Needs the swc working
   tree served alongside; see that folder's README.)
