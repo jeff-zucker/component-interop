@@ -45,7 +45,8 @@
  * of any library's actual API.
  *
  * data-* attributes: data-components (specifiers, or `*` for all), data-stage
- * (`local`|`cdn`), data-manifest (SAME-ORIGIN URLs merged after the default),
+ * (`local`|`cdn`|`auto` — auto picks local on localhost/file:, cdn elsewhere),
+ * data-manifest (SAME-ORIGIN URLs merged after the default),
  * data-manifest-default="off", data-importmap-extra (inline importmap JSON),
  * data-base (resolve data-manifest paths), data-prefer (JSON map key→preferred
  * provider library, for multi-library pages).
@@ -68,6 +69,18 @@
   // in node_modules / a CDN, the page's manifests sit with the page). `data-base`
   // overrides. The DEFAULT sibling manifest still resolves against the loader.
   var base = ds.base || (typeof document !== 'undefined' && document.baseURI) || loaderSrc.replace(/[^/]*$/, '') || './';
+
+  // data-stage="auto" → `local` on localhost/127.0.0.1/::1/file:, else `cdn`. Lets one
+  // page work from a dev server (local sources) and a CDN-hosted deploy with no edits.
+  function resolveStage(s) {
+    s = (s || 'local').trim();
+    if (s !== 'auto') return s;
+    var h = (typeof location !== 'undefined' && location.hostname) || '';
+    var dev = h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]' ||
+      (typeof location !== 'undefined' && location.protocol === 'file:');
+    return dev ? 'local' : 'cdn';
+  }
+  var STAGE = resolveStage(ds.stage);
 
   // Page-level provider preference for multi-library pages: data-prefer is a JSON
   // map of capability → preferred provider library name (highest-priority tiebreak).
@@ -202,7 +215,7 @@
 
   function mergeManifest(m, url) {
     if (!m) return;
-    var staged = (m.stages && m.stages[(ds.stage || 'local').trim()]) || {};
+    var staged = (m.stages && m.stages[STAGE]) || {};
     mergeUrlMap(m.components, url, true);
     mergeUrlMap(staged.components, url, true);
     mergeUrlMap(m['shared-modules'], url, false);

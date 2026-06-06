@@ -15,7 +15,7 @@
        load swc's rdf core FIRST so its consumer is registered before PodOS fires
        pod-os:loaded — then swc adopts PodOS's store and both read one graph. -->
   <script src="../component-interop.js"
-          data-stage="cdn"
+          data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
           data-components="sol-components/core/rdf.js @pod-os/elements"
   ></script>
@@ -132,7 +132,7 @@
 &lt;!-- Load swc's rdf core BEFORE PodOS so swc's rdf.useStore consumer is
      registered before pod-os:loaded fires --&gt;
 &lt;script src="component-interop.js"
-        data-stage="cdn"
+        data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
         data-components="sol-components/core/rdf.js @pod-os/elements"
 &gt;&lt;/script&gt;
