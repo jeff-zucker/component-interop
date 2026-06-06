@@ -30,17 +30,16 @@
     .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.25rem; margin: 1.25rem 0; background: #fff; }
     .card h2 { font-size: 1.05rem; margin: 0 0 .9rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
-    /* Legibility for the SPARQL results (swc's `list` view renders <ul class="result-list">). */
-    ul[data-from-query] { list-style: none; margin: 0; padding: 0; }
-    ul.result-list { list-style: none; margin: 0; padding: 0;
+    /* data-from-query has no view: it renders <li> straight into this host <ul>
+       (the container's tag decides the shape), so we style the host list itself. */
+    ul[data-from-query] { list-style: none; margin: 0; padding: 0;
       border: 1px solid #d7dde5; border-radius: 8px; overflow: hidden;
       max-height: 22rem; overflow-y: auto; }
-    ul.result-list li { padding: .5rem .9rem; border-top: 1px solid #eef1f5;
+    ul[data-from-query] li { padding: .5rem .9rem; border-top: 1px solid #eef1f5;
       font-size: 1.02rem; overflow-wrap: anywhere; }
-    ul.result-list li:first-child { border-top: none; }
-    ul.result-list li:nth-child(even) { background: #f7f9fc; }
-    .loading { color: #57606a; font-style: italic; }
-    .error   { color: #b00020; }
+    ul[data-from-query] li:first-child { border-top: none; }
+    ul[data-from-query] li:nth-child(even) { background: #f7f9fc; }
+    .error { color: #b00020; }
   </style>
 </head>
 <body>
@@ -48,26 +47,25 @@
 <h1>Query — a PodOS page, running real SPARQL through Comunica</h1>
 
 <div class="intro">
-  PodOS has no SPARQL view. But component-interop also loaded Solid Web Components'
-  <code>sparql</code> capability, so any element inside this PodOS app can run a query — a real one,
-  through <b>Comunica</b> (the engine the manifest pulls in on demand, so <code>ORDER BY</code> and
-  <code>LIMIT</code> are honoured). The plain <code>&lt;ul&gt;</code> below sits inside
-  <code>&lt;pos-app&gt;</code> and, via one <code>data-from-query</code>, asks the public
-  <b>DBpedia</b> endpoint for programming languages. The class is a <b>replaceable parameter</b> —
-  <code>{{type}}</code>, filled from <code>var-type</code>.
-</div>
+<p>A use case: PodOS has no SPARQL or triple-pattern abilities.  Sol Components supports both.  A PodOS app wants to gain those abilities but not use Sol Component components.  <code>Component Interop</code> to the reqcue: if a manifest makes an ability available (which Sol's does), the ability is available to the app just by refering to its manifest and using it in a page. OTOH, importing the component requires a specific data-components listing. So we'll import just the SPARQL capability in the call to component-intero like this:</p>
 
 <div class="card">
   <h2>A <code>&lt;ul&gt;</code> inside <code>&lt;pos-app&gt;</code> querying DBpedia</h2>
   <pos-app>
     <ul data-from-query
-        endpoint="https://dbpedia.org/sparql"
-        sparql="SELECT DISTINCT ?name WHERE { ?thing a &lt;http://dbpedia.org/ontology/{{type}}&gt; ; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name . FILTER(lang(?name) = 'en') } ORDER BY ?name LIMIT 30"
-        var-type="ProgrammingLanguage"
-        view="list"
+        data-endpoint="https://dbpedia.org/sparql"
+        data-sparql="SELECT DISTINCT ?name WHERE { ?thing a &lt;http://dbpedia.org/ontology/{{type}}&gt; ; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name . FILTER(lang(?name) = 'en') } ORDER BY ?name LIMIT 30"
+        data-var-type="ProgrammingLanguage"
     ></ul>
   </pos-app>
 </div>
+
+<pre>    <i>// we load the PodOS and Sol manifests</i>
+    data-manifest="sol-loader.manifest.json pod-os.manifest.json"
+
+    <i>// we load the PodOS components BUT NOT the Sol components</i>
+    data-components="@pod-os/elements"                       
+</pre>
 
 <pre id="demo-code" hidden>
 &lt;script src="component-interop.js"
@@ -77,17 +75,18 @@
 &gt;&lt;/script&gt;
 
 &lt;!-- A plain &lt;ul&gt; inside the PodOS app gains SPARQL. data-from-query runs the
-     query through Comunica against DBpedia; {{type}} is filled from var-type. --&gt;
+     query through Comunica against DBpedia and renders one &lt;li&gt; per row straight
+     into this &lt;ul&gt; (no view — the container's tag decides the shape); {{type}} is
+     filled from data-var-type. --&gt;
 &lt;pos-app&gt;
   &lt;ul data-from-query
-      endpoint="https://dbpedia.org/sparql"
-      sparql="SELECT DISTINCT ?name WHERE {
+      data-endpoint="https://dbpedia.org/sparql"
+      data-sparql="SELECT DISTINCT ?name WHERE {
                 ?thing a &lt;http://dbpedia.org/ontology/{{type}}&gt; ;
                        &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name .
                 FILTER(lang(?name) = 'en')
               } ORDER BY ?name LIMIT 30"
-      var-type="ProgrammingLanguage"
-      view="list"
+      data-var-type="ProgrammingLanguage"
   &gt;&lt;/ul&gt;
 &lt;/pos-app&gt;
 </pre>
