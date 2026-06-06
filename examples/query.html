@@ -51,12 +51,12 @@
 <p>A use case: PodOS has no SPARQL or triple-pattern abilities.  Sol Components supports both.  A PodOS app wants to gain those abilities but not use Sol Component components.  <code>Component Interop</code> to the reqcue: if a manifest makes an ability available (which Sol's does), the ability is available to the app just by refering to its manifest and using it in a page. OTOH, importing the component requires a specific data-components listing. So we'll import just the SPARQL capability in the call to component-intero like this:</p>
 
 <div class="card">
-  <h2>A <code>&lt;ul&gt;</code> inside <code>&lt;pos-app&gt;</code> querying DBpedia</h2>
+  <h2>A <code>&lt;ul&gt;</code> inside <code>&lt;pos-app&gt;</code> querying DBpedia for Turing Award recipients</h2>
   <pos-app>
     <ul data-from-query
         data-endpoint="https://dbpedia.org/sparql"
-        data-sparql="SELECT DISTINCT ?name WHERE { ?thing a &lt;http://dbpedia.org/ontology/{{type}}&gt; ; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name . FILTER(lang(?name) = 'en') } ORDER BY ?name LIMIT 30"
-        data-var-type="ProgrammingLanguage"
+        data-sparql="SELECT DISTINCT ?name WHERE { ?p &lt;http://dbpedia.org/ontology/award&gt; &lt;http://dbpedia.org/resource/{{award}}&gt; ; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name . FILTER(lang(?name) = 'en') } ORDER BY ?name LIMIT 5"
+        data-var-award="Turing_Award"
     ></ul>
   </pos-app>
 </div>
@@ -77,17 +77,17 @@
 
 &lt;!-- A plain &lt;ul&gt; inside the PodOS app gains SPARQL. data-from-query runs the
      query through Comunica against DBpedia and renders one &lt;li&gt; per row straight
-     into this &lt;ul&gt; (no view — the container's tag decides the shape); {{type}} is
-     filled from data-var-type. --&gt;
+     into this &lt;ul&gt; (no view — the container's tag decides the shape); {{award}} is
+     filled from data-var-award. --&gt;
 &lt;pos-app&gt;
   &lt;ul data-from-query
       data-endpoint="https://dbpedia.org/sparql"
       data-sparql="SELECT DISTINCT ?name WHERE {
-                ?thing a &lt;http://dbpedia.org/ontology/{{type}}&gt; ;
-                       &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name .
+                ?p &lt;http://dbpedia.org/ontology/award&gt; &lt;http://dbpedia.org/resource/{{award}}&gt; ;
+                   &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name .
                 FILTER(lang(?name) = 'en')
-              } ORDER BY ?name LIMIT 30"
-      data-var-type="ProgrammingLanguage"
+              } ORDER BY ?name LIMIT 5"
+      data-var-award="Turing_Award"
   &gt;&lt;/ul&gt;
 &lt;/pos-app&gt;
 </pre>
