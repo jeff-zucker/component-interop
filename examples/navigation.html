@@ -67,25 +67,6 @@
   </div>
 </div>
 
-<pre id="demo-manifests" hidden>
-# THE GUEST LIBRARY DECLARES IN ITS MANIFEST THAT IT PROVIDES SOMETHING
-# -- swc says it sends the url from a sol-navigate event under the key `navigation`
-#
-{
-  "objects": {
-    "provides": { "navigation": { "respondTo": "sol-navigate", "sendValue": "detail.url" } }
-  }
-}
-
-# THE HOST LIBRARY DECLARES IN ITS MANIFEST THAT IT ACCEPTS THAT THING
-# -- PodOS accepts `navigation` and slots the url it gets into pos-resource's uri attribute
-#
-{
-  "objects": {
-    "accepts": { "navigation": { "onElement": "pos-resource", "applyValueTo": "uri" } }
-  }
-}
-</pre>
 <script type="module" src="view-code.js"></script>
 
 </body>
