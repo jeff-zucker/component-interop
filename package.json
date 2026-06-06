@@ -10,6 +10,9 @@
   },
   "files": [
     "component-interop.js",
+    "component-interop.manifest.json",
+    "handler.js",
+    "examples",
     "README.md",
     "LICENSE"
   ],
