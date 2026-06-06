@@ -1,9 +1,0 @@
-{
-  "name": "lib-a",
-  "components": { "lib-a": "./lib-a.js" },
-  "objects": {
-    "provides": {
-      "greeting": { "respondTo": "liba:hello", "sendValue": "detail.name" }
-    }
-  }
-}

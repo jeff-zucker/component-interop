@@ -14,9 +14,9 @@
        (pod-os:loaded → os.store.internalStore); swc CONSUMES it (rdf.useStore). We
        load swc's rdf core FIRST so its consumer is registered before PodOS fires
        pod-os:loaded — then swc adopts PodOS's store and both read one graph. -->
-  <script src="../../component-interop.js"
+  <script src="../component-interop.js"
           data-stage="local"
-          data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-manifest="../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
           data-components="solid-web-components/core/rdf.js @pod-os/elements"
   ></script>
 

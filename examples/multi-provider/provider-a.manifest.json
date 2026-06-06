@@ -1,1 +1,0 @@
-{ "name": "provider-a", "components": { "provider-a": "./provider-a.js" }, "objects": { "provides": { "greeting": { "respondTo": "a:hello", "sendValue": "detail.name" } } } }

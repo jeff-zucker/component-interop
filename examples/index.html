@@ -10,7 +10,7 @@
        data-handler="…", so ci auto-loads its handler.js when those appear, and one
        interop:activate listener swaps the panel. Every tab is a self-contained page in
        an iframe (the first, Interop, demonstrates ci itself). -->
-  <script src="../../component-interop.js"></script>
+  <script src="../component-interop.js"></script>
 
   <style>
     :root { color-scheme: light; font-size: 18px; }
@@ -49,15 +49,15 @@
 <body>
 
 <h1>Component Interop Demo</h1>
-<p>These demos show how to use the <b>component-interop</b> library using examples from Angelo's <a href="https://github.com/pod-os/PodOS/tree/main/elements">PodOS Element components</a> and Jeff's <a href="">Sol Components</a>.
+<p>This is demo uses examples from Angelo's <a href="https://github.com/pod-os/PodOS/tree/main/elements">PodOS Element components</a> and Jeff's <a href="">Sol Components</a>, both of which are based on Solid and the rdflib store. Component Interop itself can work with any protocol and any store.
 
 <div class="tabs" role="tablist" aria-label="component-interop demos">
   <button role="tab" id="tab-interop"    data-handler="interop"    aria-controls="panel-interop"    aria-selected="true"  tabindex="0">Interop</button>
+  <button role="tab" id="tab-query"      data-handler="query"      aria-controls="panel-query"      aria-selected="false" tabindex="-1">Shared SPARQL</button>
   <button role="tab" id="tab-navigation" data-handler="navigation" aria-controls="panel-navigation" aria-selected="false" tabindex="-1">Shared Navigation</button>
   <button role="tab" id="tab-store"      data-handler="store"      aria-controls="panel-store"      aria-selected="false" tabindex="-1">Shared Store</button>
-  <button role="tab" id="tab-forms"      data-handler="forms"      aria-controls="panel-forms"      aria-selected="false" tabindex="-1">Auto-generated Forms</button>
-  <button role="tab" id="tab-query"      data-handler="query"      aria-controls="panel-query"      aria-selected="false" tabindex="-1">Shared SPARQL</button>
   <button role="tab" id="tab-auth"       data-handler="auth"       aria-controls="panel-auth"       aria-selected="false" tabindex="-1">Shared Auth</button>
+  <button role="tab" id="tab-forms"      data-handler="forms"      aria-controls="panel-forms"      aria-selected="false" tabindex="-1">Auto-generated Forms</button>
 </div>
 
 <div role="tabpanel" id="panel-interop" aria-labelledby="tab-interop">

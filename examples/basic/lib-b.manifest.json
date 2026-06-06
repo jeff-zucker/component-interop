@@ -1,9 +1,0 @@
-{
-  "name": "lib-b",
-  "components": { "lib-b": "./lib-b.js" },
-  "objects": {
-    "consumes": {
-      "greeting": { "call": "showGreeting" }
-    }
-  }
-}

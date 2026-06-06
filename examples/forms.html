@@ -13,9 +13,9 @@
   <!-- component-interop pulls in PodOS (its descriptor) and Solid Web Components
        (its manifest). The data-edit-* attributes below auto-load swc's rdf-bundle,
        so a plain element on this PodOS page becomes a form from a SHACL shape. -->
-  <script src="../../component-interop.js"
+  <script src="../component-interop.js"
           data-stage="local"
-          data-manifest="../../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-manifest="../../solid-web-components/dist/sol-loader.manifest.json pod-os.manifest.json"
           data-components="@pod-os/elements"
   ></script>
 
@@ -49,7 +49,7 @@
 <div class="card">
   <h2>PodOS shows the resource</h2>
   <pos-app>
-    <pos-resource uri="../../../solid-web-components/examples/sample-profile.ttl">
+    <pos-resource uri="../../solid-web-components/examples/sample-profile.ttl">
       <pos-container-contents></pos-container-contents>
     </pos-resource>
   </pos-app>
@@ -57,8 +57,8 @@
 
 <div class="card">
   <h2>Solid Web Components edits it — a form from a shape</h2>
-  <div data-edit-shape="../../../solid-web-components/examples/profile.shape.ttl"
-       data-subject="../../../solid-web-components/examples/sample-profile.ttl#me"
+  <div data-edit-shape="../../solid-web-components/examples/profile.shape.ttl"
+       data-subject="../../solid-web-components/examples/sample-profile.ttl#me"
        data-edit-mode="collected"
        label="Profile"
   ></div>
