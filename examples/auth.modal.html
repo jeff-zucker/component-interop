@@ -1,0 +1,24 @@
+<style>
+h2  { margin-bottom: 0; }
+xmp { margin-top: 0; }
+</style>
+
+<xmp><script src="component-interop.js"
+        data-stage="auto"
+        data-manifest="sol-components.manifest.json pod-os.manifest.json"
+        data-components="sol-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
+></script>
+
+<sol-login issuers="https://solidcommunity.net,https://solidweb.me,https://solidweb.org"></sol-login>
+
+<sol-include id="swc-priv" raw></sol-include>
+<pos-app><pos-resource id="pos-priv"></pos-resource></pos-app>
+
+<!-- on login, point both at the pod's /private/ -->
+<script type="module">
+  document.addEventListener('sol-login', (e) => {
+    const priv = new URL(e.detail.webId).origin + '/private/';
+    document.getElementById('swc-priv').setAttribute('source', priv);
+    document.getElementById('pos-priv').setAttribute('uri', priv);
+  });
+</script></xmp>

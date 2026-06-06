@@ -1,0 +1,23 @@
+<style>
+h2  { margin-bottom: 0; }
+xmp { margin-top: 0; }
+</style>
+
+<xmp><!-- <b>USE COMPONENT-INTEROP TO LOAD TWO SETS OF COMPONENTS</b>
+-->
+<script src="component-interop.js"
+        data-stage="auto"
+        data-manifest="sol-components.manifest.json pod-os.manifest.json"
+        data-components="sol-pod @pod-os/elements"
+></script>
+
+<!-- PUT THE GUEST COMPONENT'S HTML IN THE PAGE
+-->
+<sol-pod source="https://timbl.solidcommunity.net/public/"></sol-pod>
+
+<!-- PodOS follows the same current resource via the broker's resource channel -->
+<pos-app>
+  <pos-resource>
+    <pos-container-contents></pos-container-contents>
+  </pos-resource>
+</pos-app></xmp>

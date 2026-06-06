@@ -1,0 +1,23 @@
+<style>
+h2  { margin-bottom: 0; }
+xmp { margin-top: 0; }
+</style>
+
+<xmp><!-- Load swc's rdf core BEFORE PodOS so swc's rdf.useStore consumer is
+     registered before pod-os:loaded fires -->
+<script src="component-interop.js"
+        data-stage="auto"
+        data-manifest="sol-components.manifest.json pod-os.manifest.json"
+        data-components="sol-components/core/rdf.js @pod-os/elements"
+></script>
+
+<!-- PodOS loads a resource into its rdflib store -->
+<pos-app>
+  <pos-resource uri="https://timbl.solidcommunity.net/profile/card"></pos-resource>
+</pos-app>
+
+<!-- swc has adopted that very graph (rdf.useStore): -->
+<script type="module">
+  const { store } = ComponentInterop.services.get('rdf');
+  // `store` IS PodOS's internalStore — same object, same triples
+</script></xmp>

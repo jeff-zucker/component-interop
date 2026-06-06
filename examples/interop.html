@@ -10,7 +10,7 @@
         href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
   >
   <!-- The "View code" modal content — edit interop.modal.html, it's all yours. -->
-  <link rel="view-code" href="interop.modal.html">
+  <link rel="view-code" href="interop.modal.html" title="Use Sol-Components' data-handler attribute in a PodOS app without importing any of Sol-Components' components">
 
   <!-- One script loads PodOS (@pod-os/elements via pod-os.manifest.json) and, from
        sol-components' manifest, the data-handler capability. data-handler turns each
@@ -31,6 +31,8 @@
     h2:first-of-type { margin-top: .25rem; }
     p { margin: 0 0 1rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
+    .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
+             padding: 1rem 1.25rem; color: #1a1a1a; margin-bottom:1rem;}
     pre, xmp { background: #f6f8fa; border: 1px solid #d7dde5; border-radius: 6px;
       padding: .85rem 1rem; overflow: auto; margin: 0 0 1rem; display: block;
       font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -60,16 +62,17 @@
   </style>
 </head>
 <body>
-<p>In order for a click on a menu, tab, button, or other UI widget to invoke a component, we need to write a script that finds the appropriate component, and creates a new element. By importing the <code>data-handler</code> attribute from Sol Components, we can skip all of that and gain the ability to pass the component parameters from the button or menu item without scripting.</p>
+<div class="intro">
+In order for a click on a menu, tab, button, or other UI widget to invoke a component, we need to write a script that finds the appropriate component, and creates a new element. By importing the <code>data-handler</code> attribute from Sol Components, we can skip all of that and gain the ability to pass the component parameters from the button or menu item without scripting.
+</div>
 
 <div class="picker-row">
-  <div class="picker-left">
+  <div class="picker-left intro">
     <p>The picker at right uses the <code>data-handler</code> attribute on vanilla HTML buttons to create a tabset that displays the PodOS component <code>pos-image</code>.</p>
 
     <p>The <code>data-handler</code> attribute is polite - it provides an action mechanism and a value transfer, but has nothing to say about how your app uses or displays the component called by the handler - CSS, light/shadow, where the item is placed - those are your decisions to make.</p>
-
-<button type="button" class="view-code-btn">View code</button>
 </div>
+
 
   <div class="live">
   <pos-app>
@@ -97,6 +100,7 @@
   </pos-app>
 </div>
 </div>
+<div><button type="button" class="view-code-btn">View code</button></div>
 
 <script>
   // These demos use ES modules, fetch (manifests) and import maps — none run from file://.

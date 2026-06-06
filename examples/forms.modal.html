@@ -1,0 +1,20 @@
+<style>
+h2  { margin-bottom: 0; }
+xmp { margin-top: 0; }
+</style>
+
+<xmp><script src="component-interop.js"
+        data-stage="auto"
+        data-manifest="sol-components.manifest.json pod-os.manifest.json"
+        data-components="@pod-os/elements"
+></script>
+
+<pos-app><pos-resource uri="sample-profile.ttl"></pos-resource></pos-app>
+
+<!-- a plain div becomes a form generated from a SHACL shape -->
+<div data-edit-shape="profile.shape.ttl"
+     data-subject="sample-profile.ttl#me"
+     data-edit-mode="collected"
+     label="Profile"
+></div>
+<sol-settings></sol-settings></xmp>

@@ -50,7 +50,7 @@
     (doc.head || doc.documentElement).appendChild(style);
   }
 
-  function openModal(doc, content) {
+  function openModal(doc, content, titleText) {
     ensureStyle(doc);
     var prev = doc.getElementById('view-code-dialog');
     if (prev) prev.remove();
@@ -67,7 +67,7 @@
     head.className = 'view-code-head';
     var title = doc.createElement('strong');
     title.id = 'view-code-title';
-    // No heading text baked in here — a page supplies its own (see below).
+    if (titleText) title.textContent = titleText;   // from <link rel="view-code" title="…">; empty = no header text
     var close = doc.createElement('button');
     close.type = 'button';
     close.className = 'view-code-close';
@@ -102,14 +102,16 @@
   }
 
   // Expose so an iframe can open the modal in THIS (top-level) document. `content`
-  // is either an HTML string (rendered as the modal body) or an array of {code}.
-  window.solposViewCode = function (content) { return openModal(document, content); };
+  // is either an HTML string (rendered as the modal body) or an array of {code};
+  // `titleText` (optional) goes in the modal header bar.
+  window.solposViewCode = function (content, titleText) { return openModal(document, content, titleText); };
 
-  // A page declares its modal content as a separate file it fully controls:
-  //   <link rel="view-code" href="interop.modal.html">
-  // That file is plain HTML — write any text around <xmp> blocks (each shows its
-  // contents verbatim as code). On click we fetch it and render it in the modal.
-  // (Legacy: a page with #demo-code [+ #demo-manifests] is shown as plain code blocks.)
+  // A page declares its modal content one of two ways, and an optional header title
+  // via a `title` attribute on whichever element it uses:
+  //   <link rel="view-code" href="interop.modal.html" title="…">   (an HTML file, shown as the body)
+  //   <pre id="demo-code" title="…">…</pre>                        (a code block; + optional #demo-manifests)
+  // The link's file is plain HTML — write any text around <xmp> blocks (each shows
+  // its contents verbatim as code). On click we fetch/show it in the modal.
   // The page puts the button in its OWN HTML, wherever it wants it:
   //   <button class="view-code-btn">View code</button>
   // We only WIRE it — never inject one.
@@ -122,14 +124,15 @@
     btn.addEventListener('click', function () {
       var host = (window.parent && window.parent !== window && typeof window.parent.solposViewCode === 'function')
         ? window.parent : window;
+      var modalTitle = (link || codeEl).getAttribute('title') || '';   // header title, from whichever the page uses
       if (link) {
         fetch(link.getAttribute('href')).then(function (r) { return r.text(); })
-          .then(function (html) { host.solposViewCode(html); });
+          .then(function (html) { host.solposViewCode(html, modalTitle); });
       } else {
         var sections = [{ code: trim(codeEl) }];
         var man = document.getElementById('demo-manifests');
         if (man) sections.push({ code: trim(man) });
-        host.solposViewCode(sections);
+        host.solposViewCode(sections, modalTitle);
       }
     });
   }

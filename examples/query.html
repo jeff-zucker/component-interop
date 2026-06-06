@@ -10,6 +10,11 @@
         href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
   >
 
+  <link rel="view-code"
+        href="query.modal.html"
+        title="Adding SPARQL to any element with the **data-from-query** attribute"
+  >
+
   <!-- component-interop loads PodOS (its descriptor) and Solid Web Components (its
        manifest), so using `data-from-query` here auto-loads swc's SPARQL module —
        and, on demand, Comunica (resolved by the manifest), the engine that runs a
@@ -27,12 +32,20 @@
     h1    { font-size: 1.5rem; }
     .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; }
-    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.25rem; margin: 1.25rem 0; background: #fff; }
-    .card h2 { font-size: 1.05rem; margin: 0 0 .9rem; }
-    code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
+    h2 { font-size: 1.05rem; margin: 0 0 .9rem; }
+    code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; font-weight:bold; }
+    pre { background: #f6f8fa; border: 1px solid #d7dde5; border-radius: 6px;
+      padding: .85rem 1rem; overflow: auto; margin: 0 0 1rem;
+      font: .95rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    /* Two columns: explanation + code on the left, the live result on the right. */
+    .picker-row { display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap; margin: 1.25rem 0; }
+    .picker-left { flex: 1 1 20rem; min-width: 0; }
+    .picker-left > :first-child { margin-top: 0; }
+    .live { background: #2f333d; border-radius: 8px; padding: .75rem; flex: 0 0 auto; width: 16rem; }
+    .live pos-app { display: block; }
     /* data-from-query has no view: it renders <li> straight into this host <ul>
        (the container's tag decides the shape), so we style the host list itself. */
-    ul[data-from-query] { list-style: none; margin: 0; padding: 0;
+    ul[data-from-query] { list-style: none; margin: 0; padding: 0; background: #fff;
       border: 1px solid #d7dde5; border-radius: 8px; overflow: hidden;
       max-height: 22rem; overflow-y: auto; }
     ul[data-from-query] li { padding: .5rem .9rem; border-top: 1px solid #eef1f5;
@@ -45,54 +58,32 @@
 </head>
 <body>
 
-<button type="button" class="view-code-btn">View code</button>
-
-<h1>Query — a PodOS page, running real SPARQL through Comunica</h1>
 
 <div class="intro">
-<p>A use case: PodOS has no SPARQL or triple-pattern abilities.  Sol Components supports both.  A PodOS app wants to gain those abilities but not use Sol Component components.  <code>Component Interop</code> to the reqcue: if a manifest makes an ability available (which Sol's does), the ability is available to the app just by refering to its manifest and using it in a page. OTOH, importing the component requires a specific data-components listing. So we'll import just the SPARQL capability in the call to component-intero like this:</p>
-
-<div class="card">
-  <h2>A <code>&lt;ul&gt;</code> inside <code>&lt;pos-app&gt;</code> querying DBpedia for Turing Award recipients</h2>
-  <pos-app>
-    <ul data-from-query
-        data-endpoint="https://dbpedia.org/sparql"
-        data-sparql="SELECT DISTINCT ?name WHERE { ?p &lt;http://dbpedia.org/ontology/award&gt; &lt;http://dbpedia.org/resource/{{award}}&gt; ; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name . FILTER(lang(?name) = 'en') } ORDER BY ?name LIMIT 5"
-        data-var-award="Turing_Award"
-    ></ul>
-  </pos-app>
+<p>PodOS has no SPARQL or triple-pattern abilities.  Sol-Components supports both.  A PodOS app (or any other app) can use Sol-Components' <code>data-from-query</code> attribute without importing anything else from Sol-Components. Any element (custom or not) in the PodOS app gains full Comunica SPARQL just from a pointer to Sol-Components' manifest and use of the attribute on an element.</p>
 </div>
 
-<pre>    <i>// we load the PodOS and Sol manifests</i>
-    data-manifest="sol-components.manifest.json pod-os.manifest.json"
+<div class="picker-row">
+  <div class="picker-left intro">
+<p>The listing to the right is generated from a vanilla HTML &lt;ul&gt; inside a PodOS app enhanced with <code>data-from-query</code> which queries DBpedia for Turing Award recipients.</p>
+<p>If the <code>data-from-query</code> appears in plain element like a ul or select, it will supoly the query results appropriately as li or option items.  If it appears in custom element, the query results are available to that element as a standards compliant JSON object.</p>
+<!-- <p><a href="from-query-handler.html">Handling the results in your own element &rarr;</a></p> -->
+  </div>
 
-    <i>// we load the PodOS components BUT NOT the Sol components</i>
-    data-components="@pod-os/elements"                       
-</pre>
+  <div class="live">
+    <pos-app>
+      <ul data-from-query
+          data-endpoint="https://dbpedia.org/sparql"
+          data-sparql="SELECT DISTINCT ?name WHERE { ?p &lt;http://dbpedia.org/ontology/award&gt; &lt;http://dbpedia.org/resource/{{award}}&gt; ; &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name . FILTER(lang(?name) = 'en') } ORDER BY ?name LIMIT 5"
+          data-var-award="Turing_Award"
+      ></ul>
+    </pos-app>
+  </div>
+</div>
 
-<pre id="demo-code" hidden>
-&lt;script src="component-interop.js"
-        data-stage="auto"
-        data-manifest="sol-components.manifest.json pod-os.manifest.json"
-        data-components="@pod-os/elements"
-&gt;&lt;/script&gt;
 
-&lt;!-- A plain &lt;ul&gt; inside the PodOS app gains SPARQL. data-from-query runs the
-     query through Comunica against DBpedia and renders one &lt;li&gt; per row straight
-     into this &lt;ul&gt; (no view — the container's tag decides the shape); {{award}} is
-     filled from data-var-award. --&gt;
-&lt;pos-app&gt;
-  &lt;ul data-from-query
-      data-endpoint="https://dbpedia.org/sparql"
-      data-sparql="SELECT DISTINCT ?name WHERE {
-                ?p &lt;http://dbpedia.org/ontology/award&gt; &lt;http://dbpedia.org/resource/{{award}}&gt; ;
-                   &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?name .
-                FILTER(lang(?name) = 'en')
-              } ORDER BY ?name LIMIT 5"
-      data-var-award="Turing_Award"
-  &gt;&lt;/ul&gt;
-&lt;/pos-app&gt;
-</pre>
+<button type="button" class="view-code-btn">View code</button>
+
 <script type="module" src="view-code.js"></script>
 
 </body>

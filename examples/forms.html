@@ -13,6 +13,7 @@
   <!-- component-interop pulls in PodOS (its descriptor) and Solid Web Components
        (its manifest). The data-edit-* attributes below auto-load swc's rdf-bundle,
        so a plain element on this PodOS page becomes a form from a SHACL shape. -->
+  <link rel="view-code" href="forms.modal.html">
   <script src="../component-interop.js"
           data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
@@ -73,23 +74,6 @@
   </p>
 </div>
 
-<pre id="demo-code" hidden>
-&lt;script src="component-interop.js"
-        data-stage="auto"
-        data-manifest="sol-components.manifest.json pod-os.manifest.json"
-        data-components="@pod-os/elements"
-&gt;&lt;/script&gt;
-
-&lt;pos-app&gt;&lt;pos-resource uri="sample-profile.ttl"&gt;&lt;/pos-resource&gt;&lt;/pos-app&gt;
-
-&lt;!-- a plain div becomes a form generated from a SHACL shape --&gt;
-&lt;div data-edit-shape="profile.shape.ttl"
-     data-subject="sample-profile.ttl#me"
-     data-edit-mode="collected"
-     label="Profile"
-&gt;&lt;/div&gt;
-&lt;sol-settings&gt;&lt;/sol-settings&gt;
-</pre>
 <pre id="demo-manifests" hidden>
 # sol-components manifest — the data-edit-* attributes auto-load a bundle
 # (no object shared here — using the attributes just pulls in code on demand)

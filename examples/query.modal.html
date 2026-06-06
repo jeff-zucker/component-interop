@@ -1,0 +1,29 @@
+<style>
+h2  { margin-bottom: 0; }
+xmp { margin-top: 0; }
+</style>
+
+<h2>1. Invoke component interop</h2>
+<xmp><script src="component-interop.js"
+        data-stage="auto"
+        data-manifest="sol-components.manifest.json pod-os.manifest.json"  // load sol-component manifest
+        data-components="@pod-os/elements"                                 // do or don't load sol-component compents
+></script></xmp>
+
+<h2>2. Add **data-from-query** and related attributes to any element, you're done</h2>
+<xmp><pos-app>
+  <ul data-from-query
+      data-endpoint="https://dbpedia.org/sparql"
+      data-sparql="SELECT DISTINCT ?name WHERE {
+                ?p <http://dbpedia.org/ontology/award> <http://dbpedia.org/resource/Turing_Award> ;
+                   <http://www.w3.org/2000/01/rdf-schema#label> ?name .
+                FILTER(lang(?name) = 'en')
+              } ORDER BY ?name LIMIT 5"
+  ></ul>
+</pos-app></xmp>
+
+<h2>This illustrates Data-from-query in a ul element.  If you use it in a custom element, you can retrieve the data as a JSON object. See the <a href="">Using data-from-query in a custom element</a>.
+
+<h2>Data-from-query has many other options (search by triple pattern, stored queries, replaceable parameter queries, and more) see the <a href="">Sol-Component sol-query documents</a>.
+
+

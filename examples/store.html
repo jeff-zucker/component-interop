@@ -14,6 +14,7 @@
        (pod-os:loaded → os.store.internalStore); swc CONSUMES it (rdf.useStore). We
        load swc's rdf core FIRST so its consumer is registered before PodOS fires
        pod-os:loaded — then swc adopts PodOS's store and both read one graph. -->
+  <link rel="view-code" href="store.modal.html">
   <script src="../component-interop.js"
           data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
@@ -130,26 +131,6 @@
   report();
 </script>
 
-<pre id="demo-code" hidden>
-&lt;!-- Load swc's rdf core BEFORE PodOS so swc's rdf.useStore consumer is
-     registered before pod-os:loaded fires --&gt;
-&lt;script src="component-interop.js"
-        data-stage="auto"
-        data-manifest="sol-components.manifest.json pod-os.manifest.json"
-        data-components="sol-components/core/rdf.js @pod-os/elements"
-&gt;&lt;/script&gt;
-
-&lt;!-- PodOS loads a resource into its rdflib store --&gt;
-&lt;pos-app&gt;
-  &lt;pos-resource uri="https://timbl.solidcommunity.net/profile/card"&gt;&lt;/pos-resource&gt;
-&lt;/pos-app&gt;
-
-&lt;!-- swc has adopted that very graph (rdf.useStore): --&gt;
-&lt;script type="module"&gt;
-  const { store } = ComponentInterop.services.get('rdf');
-  // `store` IS PodOS's internalStore — same object, same triples
-&lt;/script&gt;
-</pre>
 <pre id="demo-manifests" hidden>
 # pod-os.manifest.json — PodOS hands over its store
 {

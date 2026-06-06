@@ -14,6 +14,7 @@
        manifest). data-components loads swc's <sol-login> + <sol-include> (plain
        components). Logging in with sol-login establishes the session both sides try
        to read your pod's /private/ with. -->
+  <link rel="view-code" href="auth.modal.html">
   <script src="../component-interop.js"
           data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
@@ -110,27 +111,6 @@
   });
 </script>
 
-<pre id="demo-code" hidden>
-&lt;script src="component-interop.js"
-        data-stage="auto"
-        data-manifest="sol-components.manifest.json pod-os.manifest.json"
-        data-components="sol-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
-&gt;&lt;/script&gt;
-
-&lt;sol-login issuers="https://solidcommunity.net,https://solidweb.me,https://solidweb.org"&gt;&lt;/sol-login&gt;
-
-&lt;sol-include id="swc-priv" raw&gt;&lt;/sol-include&gt;
-&lt;pos-app&gt;&lt;pos-resource id="pos-priv"&gt;&lt;/pos-resource&gt;&lt;/pos-app&gt;
-
-&lt;!-- on login, point both at the pod's /private/ --&gt;
-&lt;script type="module"&gt;
-  document.addEventListener('sol-login', (e) =&gt; {
-    const priv = new URL(e.detail.webId).origin + '/private/';
-    document.getElementById('swc-priv').setAttribute('source', priv);
-    document.getElementById('pos-priv').setAttribute('uri', priv);
-  });
-&lt;/script&gt;
-</pre>
 <pre id="demo-manifests" hidden>
 # sol-components manifest — sol-login is a plain component; it shares the session
 {

@@ -1,3 +1,4 @@
+<head><title>Foo</title></head><body>
 <style>
 h2  {margin-bottom:0;}
 xmp {margin-top:0;}
@@ -7,10 +8,10 @@ xmp {margin-top:0;}
 <xmp><script src="../component-interop.js"
   data-stage="auto"                                                  // local on localhost, CDN when deployed
   data-manifest="sol-components.manifest.json pod-os.manifest.json"  // import Sol-Components' manifest
-        data-components="@pod-os/elements"                           // don't import Sol-Components' components
+  data-components="@pod-os/elements"                                 // don't import Sol-Components' components
 ></script></xmp>
 
-<h2>2. In the app body, add the data-handler attribute to any element</h2>
+<h2>2. In the app body, add the data-handler and attributes the component needs to any element</h2>
 <xmp><pos-app><div id="pos-photos">
   <button data-handler="pos-image"
           data-src="https://timbl.solidcommunity.net/profile/TBL%20by%20coz%20Solid%20purple.png"

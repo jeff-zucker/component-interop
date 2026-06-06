@@ -11,7 +11,8 @@
        panel. Every tab is a self-contained page in an iframe. -->
   <script src="../component-interop.js"
           data-stage="auto"
-          data-manifest="sol-components.manifest.json"></script>
+          data-manifest="sol-components.manifest.json"
+  ></script>
 
   <style>
     :root { color-scheme: light; font-size: 18px; }
@@ -55,11 +56,17 @@
 <p>This is demo uses examples from Angelo's <a href="https://github.com/pod-os/PodOS/tree/main/elements">PodOS Element components</a> and Jeff's <a href="">Sol Components</a>, both of which are based on Solid and the rdflib store. Component Interop itself can work with any protocol and any store.
 
 <div class="tabs" role="tablist" aria-label="component-interop demos">
-  <button role="tab" id="tab-interop"    data-handler="interop"    aria-controls="panel-interop"    aria-selected="true"  tabindex="0">Clickable<br>Components</button>
-  <button role="tab" id="tab-query"      data-handler="query"      aria-controls="panel-query"      aria-selected="false" tabindex="-1">Shared<br>SPARQL</button>
+
   <button role="tab" id="tab-navigation" data-handler="navigation" aria-controls="panel-navigation" aria-selected="false" tabindex="-1">Shared<br>Navigation</button>
+
   <button role="tab" id="tab-store"      data-handler="store"      aria-controls="panel-store"      aria-selected="false" tabindex="-1">Shared<br>Store</button>
+
   <button role="tab" id="tab-auth"       data-handler="auth"       aria-controls="panel-auth"       aria-selected="false" tabindex="-1">Shared<br>Auth</button>
+
+  <button role="tab" id="tab-interop"    data-handler="interop"    aria-controls="panel-interop"    aria-selected="true"  tabindex="0">Clickable<br>Components</button>
+
+  <button role="tab" id="tab-query"      data-handler="query"      aria-controls="panel-query"      aria-selected="false" tabindex="-1">SPARQL<br>Anywhere</button>
+
   <button role="tab" id="tab-forms"      data-handler="forms"      aria-controls="panel-forms"      aria-selected="false" tabindex="-1">Auto-generated<br>Forms</button>
 </div>
 

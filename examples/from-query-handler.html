@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Handling data-from-query results in your own element</title>
+  <style>
+    :root { font-size: 18px; }
+    body { font: 1rem/1.6 system-ui, sans-serif; color: #1a1a1a; background: #fff;
+           margin: 2rem auto; max-width: 46rem; padding: 0 1.25rem; }
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.1rem; margin: 1.6rem 0 .4rem; }
+    p  { margin: 0 0 .8rem; }
+    code { background: #e7e9f5; padding: 0 .25rem; border-radius: 3px; }
+    pre, xmp { display: block; background: #f6f8fa; border: 1px solid #d7dde5; border-radius: 6px;
+      padding: .85rem 1rem; overflow: auto; margin: .4rem 0 1rem;
+      font: .9rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px; padding: 1rem 1.25rem; }
+  </style>
+</head>
+<body>
+
+<h1>Handling <code>data-from-query</code> results in your own element</h1>
+
+<div class="intro">
+<p><code>data-from-query</code> runs a SPARQL query and hands the results to the element it sits on. On a <code>&lt;ul&gt;</code> or <code>&lt;select&gt;</code> it fills the rows in for you; on any other element — including your own custom element — it just hands you the data so you can render it however you like.</p>
+</div>
+
+<h2>1. Put the attribute on your element</h2>
+<xmp><x-foo data-from-query
+       data-endpoint="https://dbpedia.org/sparql"
+       data-sparql="SELECT ?name WHERE { … } LIMIT 5"
+></x-foo></xmp>
+
+<h2>2. Receive the results</h2>
+<p>When the query finishes you get the W3C SPARQL JSON. Pick whichever you prefer:</p>
+
+<p><strong>Listen for the <code>sol-data-ready</code> event.</strong> It bubbles, so you can listen on the element itself or on any ancestor:</p>
+<pre>el.addEventListener('sol-data-ready', (e) => {
+  const rows = e.detail.data.results.bindings;   // one object per result row
+  // rows[0].name.value  →  the ?name value of the first row
+});</pre>
+
+<p><strong>Or define a <code>swcData</code> setter</strong> on your element — the results are assigned to that property when they arrive:</p>
+<pre>class XFoo extends HTMLElement {
+  set swcData(results) {
+    const rows = results.results.bindings;
+    // render from rows…
+  }
+}
+customElements.define('x-foo', XFoo);</pre>
+
+<h2>The data shape</h2>
+<p>Both give you the <a href="https://www.w3.org/TR/sparql11-results-json/">W3C SPARQL 1.1 Query Results JSON</a>:</p>
+<pre>{
+  head:    { vars: ["name"] },
+  results: { bindings: [ { name: { type: "literal", value: "Adi Shamir" } }, … ] }
+}</pre>
+
+</body>
+</html>
