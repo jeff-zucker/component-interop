@@ -228,12 +228,13 @@
     if (m.objects && m.name) interopSources.push({ name: m.name, interop: m.objects });
   }
 
-  // The default sibling (the loader's own — trusted even cross-origin) then any
-  // data-manifest (SAME-ORIGIN only — it names modules the loader will import()).
+  // The default sibling (the loader's own — trusted even cross-origin, and OPTIONAL:
+  // a missing one is normal, e.g. ci ships none, so its 404 is skipped silently) then
+  // any data-manifest (SAME-ORIGIN only — it names modules the loader will import()).
   function manifestEntries() {
     var entries = [];
     if (ds.manifestDefault !== 'off' && loaderSrc) {
-      entries.push({ url: loaderSrc.replace(/(\.min)?\.js(\?.*)?$/, '.manifest.json'), trusted: true });
+      entries.push({ url: loaderSrc.replace(/(\.min)?\.js(\?.*)?$/, '.manifest.json'), trusted: true, optional: true });
     }
     toList(ds.manifest).forEach(function (u) { entries.push({ url: u, trusted: false }); });
     return entries;
@@ -256,7 +257,7 @@
       return fetch(abs)
         .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
         .then(function (m) { return { m: m, url: abs }; })
-        .catch(function (err) { console.error('[component-interop] manifest ' + e.url + ': ' + err.message); return null; });
+        .catch(function (err) { if (!e.optional) console.error('[component-interop] manifest ' + e.url + ': ' + err.message); return null; });
     })).then(function (results) {
       results.forEach(function (r) { if (r && r.m) mergeManifest(r.m, r.url); });   // in order → first wins
     });
