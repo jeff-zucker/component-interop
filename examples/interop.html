@@ -12,13 +12,14 @@
   <!-- The "View code" modal content — edit interop.modal.html, it's all yours. -->
   <link rel="view-code" href="interop.modal.html">
 
-  <!-- The headline ci move: one script loads a component library (PodOS,
-       @pod-os/elements via pod-os.manifest.json) AND ci's own handler. The handler
-       turns each data-handler button below into a live PodOS <pos-image> dropped
-       straight into the page — data-handler's whole point: direct DOM insertion. -->
+  <!-- One script loads PodOS (@pod-os/elements via pod-os.manifest.json) and, from
+       sol-components' manifest, the data-handler capability. data-handler turns each
+       button below into a live PodOS <pos-image> dropped straight into the page —
+       its whole point: direct DOM insertion of a component from a click. -->
   <script src="../component-interop.js"
-          data-stage="cdn"
-          data-manifest="pod-os.manifest.json"
+          data-stage="auto"
+          data-manifest-default="off"
+          data-manifest="sol-components.manifest.json pod-os.manifest.json"
           data-components="@pod-os/elements"
   ></script>
 
@@ -60,12 +61,9 @@
 </head>
 <body>
 
-<h2>What Component Interop provides</h2>
-<p>While <i>component-interop's</i> main function is brokering between components as shown in the other tabs, it can also be used with a single component library.  By invoking the component-interop script you get these things regardless of whether you load other component libraries or not.</p>
-<ol>
-<li> a manifest driven loader (user knows the URL of the manifest, not of individual components or prereqs)
-<li> a single attribute that can be used on any element on any page: data-handler
-<li> a single named emited signal 'interop:activate' which can be listened for when using data-handler
+<h2>Clicakable Components</h2>
+<p>A menu, tab, button, or other UI widget can directly call up HTML pages but usually can not directly call a component.  By importing the <code>data-handler</code> attribute from Sol Components, components become first class citizens, directly callable from a click.</p>
+
 </ol>
 <div class="picker-row">
 
@@ -109,15 +107,15 @@
   } else {
     var photoBtns = function () { return Array.prototype.slice.call(document.querySelectorAll('#pos-photos button')); };
 
-    // ci's handler built the <pos-image> (data-src → src, data-alt → alt); all we
-    // do is drop the instance straight into the pane — no library-specific nesting.
+    // sol-components' handler built the <pos-image> (data-src → src, data-alt → alt);
+    // all we do is drop the instance straight into the pane — no library-specific nesting.
     document.addEventListener('interop:activate', function (e) {
       if (e.detail.handler !== 'pos-image') return;
       document.getElementById('pos-pane').replaceChildren(e.detail.element);
       photoBtns().forEach(function (b) { b.setAttribute('aria-pressed', String(b === e.detail.source)); });
     });
 
-    // Show the first photo once ci's handler is live (it auto-loads at DOM-ready).
+    // Show the first photo once the data-handler capability is live (auto-loaded).
     var showFirst = function () { var b = photoBtns()[0]; if (b) b.click(); };
     var ci = window.ComponentInterop;
     if (ci && ci.has && ci.has('data-handler')) showFirst();
