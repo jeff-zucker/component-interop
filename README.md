@@ -1,8 +1,8 @@
 # Component Interop
 
-- resource sharing between web components from different authors
+[![npm](https://img.shields.io/npm/v/component-interop)](https://www.npmjs.com/package/component-interop)
 
-**Quickest way to learn: try the [demo](examples/index.html).**
+- resource sharing between web components from different authors
 
 The goal is interoperable web-components which can share resources even if they come from different component libraries by different authors. 
 
@@ -20,17 +20,17 @@ This zero-dependency, tiny (17kb) library is component-agnostic - any web compon
     * an app can apply the abilities of a foregin component to its own elements
 * prevents duplication & greedy loading
   * apps can tree shake component libraries, pulling only what they need
-  * if multiple libraries import the same prereq (e.g. rdflib) only one copy is loaded
+  * externalized prereqs (e.g. rdflib) and components are guaranteed to only load once
   * in some cases, one can use attributes from a foreign library without importing the full component
 
-## Check out  the [demo](examples/index.html)!
+### Check out  the [demo](examples/index.html)!
 
-## Visit the [documentation](help/index.html)!
+### Visit the [documentation](help/index.html)!
 
-## Transparency
+### Transparency
 
 Portions created using Claude Opus 4.8.
 
-## License
+### License
 
 MIT © Jeff Zucker, 2026
