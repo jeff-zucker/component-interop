@@ -5,23 +5,22 @@ xmp {margin-top:0;}
 
 <h2>1. In the app head, invoke component-interop</h2>
 <xmp><script src="../component-interop.js"
-        data-stage="auto"                     // local on localhost, CDN when deployed
-        data-manifest-default="off"
-        data-manifest="sol-components.manifest.json pod-os.manifest.json"  // the data-handler capability (Sol) + PodOS components
-        data-components="@pod-os/elements"    // import PodOS's components
+  data-stage="auto"                                                  // local on localhost, CDN when deployed
+  data-manifest="sol-components.manifest.json pod-os.manifest.json"  // import Sol-Components' manifest
+        data-components="@pod-os/elements"                           // don't import Sol-Components' components
 ></script></xmp>
 
 <h2>2. In the app body, add the data-handler attribute to any element</h2>
 <xmp><pos-app><div id="pos-photos">
-    <button data-handler="pos-image"
-            data-src="https://timbl.solidcommunity.net/profile/TBL%20by%20coz%20Solid%20purple.png"
-            data-alt="Tim Berners-Lee">Tim</button>
-    <button data-handler="pos-image"
-            data-src="https://angelo.veltens.org/profile/me.jpg"
-            data-alt="Angelo Veltens">Angelo</button>
-    <button data-handler="pos-image"
-            data-src="https://virginiabalseiro.com/assets/images/profile.jpg"
-            data-alt="Virginia Balseiro">Virginia</button>
+  <button data-handler="pos-image"
+          data-src="https://timbl.solidcommunity.net/profile/TBL%20by%20coz%20Solid%20purple.png"
+          data-alt="Tim Berners-Lee">Tim</button>
+  <button data-handler="pos-image"
+          data-src="https://angelo.veltens.org/profile/me.jpg"
+          data-alt="Angelo Veltens">Angelo</button>
+  <button data-handler="pos-image"
+          data-src="https://virginiabalseiro.com/assets/images/profile.jpg"
+          data-alt="Virginia Balseiro">Virginia</button>
 </div><div id="pos-pane"></div></pos-app>
 </xmp>
 

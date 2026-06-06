@@ -11,8 +11,7 @@
  *           data-components="my-widgets"
  *           data-manifest="other-lib.manifest.json"></script>
  *
- * On load it (1) reads its DEFAULT manifest — a sibling named after itself,
- * `<basename>.manifest.json` — plus any `data-manifest` URLs; (2) injects an
+ * On load it (1) reads the `data-manifest` URLs; (2) injects an
  * importmap built from the manifests' `components` (stage chosen by `data-stage`);
  * (3) `import()`s the `data-components` modules (or all, with `data-components="*"`);
  * (4) brokers the libraries' `objects` blocks; (5) at DOM-ready, auto-loads any
@@ -46,10 +45,9 @@
  *
  * data-* attributes: data-components (specifiers, or `*` for all), data-stage
  * (`local`|`cdn`|`auto` — auto picks local on localhost/file:, cdn elsewhere),
- * data-manifest (SAME-ORIGIN URLs merged after the default),
- * data-manifest-default="off", data-importmap-extra (inline importmap JSON),
- * data-base (resolve data-manifest paths), data-prefer (JSON map key→preferred
- * provider library, for multi-library pages).
+ * data-manifest (SAME-ORIGIN URLs to merge), data-importmap-extra (inline
+ * importmap JSON), data-base (resolve data-manifest paths), data-prefer (JSON map
+ * key→preferred provider library, for multi-library pages).
  *
  * API on window.ComponentInterop: ready (Promise), load(components), manifest,
  * loaded, version, registerCapability("data-x", modules),
@@ -67,7 +65,7 @@
   var loaderSrc = (self && self.src) || '';
   // data-manifest URLs resolve against the PAGE by default (the loader is usually
   // in node_modules / a CDN, the page's manifests sit with the page). `data-base`
-  // overrides. The DEFAULT sibling manifest still resolves against the loader.
+  // overrides.
   var base = ds.base || (typeof document !== 'undefined' && document.baseURI) || loaderSrc.replace(/[^/]*$/, '') || './';
 
   // data-stage="auto" → `local` on localhost/127.0.0.1/::1/file:, else `cdn`. Lets one
@@ -228,36 +226,30 @@
     if (m.objects && m.name) interopSources.push({ name: m.name, interop: m.objects });
   }
 
-  // The default sibling (the loader's own — trusted even cross-origin, and OPTIONAL:
-  // a missing one is normal, e.g. ci ships none, so its 404 is skipped silently) then
-  // any data-manifest (SAME-ORIGIN only — it names modules the loader will import()).
+  // The manifests to merge: the SAME-ORIGIN data-manifest URLs — each names the
+  // modules the loader will import().
   function manifestEntries() {
-    var entries = [];
-    if (ds.manifestDefault !== 'off' && loaderSrc) {
-      entries.push({ url: loaderSrc.replace(/(\.min)?\.js(\?.*)?$/, '.manifest.json'), trusted: true, optional: true });
-    }
-    toList(ds.manifest).forEach(function (u) { entries.push({ url: u, trusted: false }); });
-    return entries;
+    return toList(ds.manifest);
   }
 
   function loadManifests() {
-    var entries = manifestEntries();
-    if (!entries.length) return Promise.resolve();
-    return Promise.all(entries.map(function (e) {
+    var urls = manifestEntries();
+    if (!urls.length) return Promise.resolve();
+    return Promise.all(urls.map(function (u) {
       var abs;
-      try { abs = new URL(e.url, base).href; }
-      catch (x) { console.warn('[component-interop] bad manifest URL: ' + e.url); return null; }
-      if (!e.trusted && abs.indexOf(location.origin + '/') !== 0 && abs !== location.origin) {
+      try { abs = new URL(u, base).href; }
+      catch (x) { console.warn('[component-interop] bad manifest URL: ' + u); return null; }
+      if (abs.indexOf(location.origin + '/') !== 0 && abs !== location.origin) {
         var o; try { o = new URL(abs); } catch (x) { o = null; }
         if (!o || o.origin !== location.origin) {
-          console.error('[component-interop] data-manifest must be same-origin — ignored: ' + e.url);
+          console.error('[component-interop] data-manifest must be same-origin — ignored: ' + u);
           return null;
         }
       }
       return fetch(abs)
         .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
         .then(function (m) { return { m: m, url: abs }; })
-        .catch(function (err) { if (!e.optional) console.error('[component-interop] manifest ' + e.url + ': ' + err.message); return null; });
+        .catch(function (err) { console.error('[component-interop] manifest ' + u + ': ' + err.message); return null; });
     })).then(function (results) {
       results.forEach(function (r) { if (r && r.m) mergeManifest(r.m, r.url); });   // in order → first wins
     });

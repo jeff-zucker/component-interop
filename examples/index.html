@@ -10,7 +10,7 @@
        sol-components' manifest from the CDN; one interop:activate listener swaps the
        panel. Every tab is a self-contained page in an iframe. -->
   <script src="../component-interop.js"
-          data-stage="auto" data-manifest-default="off"
+          data-stage="auto"
           data-manifest="sol-components.manifest.json"></script>
 
   <style>
@@ -33,7 +33,9 @@
       font: inherit; font-size: 1rem; cursor: pointer;
       background: #4b515e; color: #e6e8ec;
       border: 1px solid #5b6270; border-bottom: none;
-      border-radius: 8px 8px 0 0; padding: .4rem .65rem; margin-bottom: -2px;
+      border-radius: 8px 8px 0 0; padding: .35rem .7rem; margin-bottom: -2px;
+      /* each multi-word title breaks at its <br> onto two lines; nowrap keeps tokens intact */
+      white-space: nowrap; text-align: center; line-height: 1.2;
     }
     .tabs button[role="tab"][aria-selected="true"] {
       background: #fff; color: #1a1a1a; border-color: #5b6270; border-bottom: 2px solid #fff;
@@ -53,12 +55,12 @@
 <p>This is demo uses examples from Angelo's <a href="https://github.com/pod-os/PodOS/tree/main/elements">PodOS Element components</a> and Jeff's <a href="">Sol Components</a>, both of which are based on Solid and the rdflib store. Component Interop itself can work with any protocol and any store.
 
 <div class="tabs" role="tablist" aria-label="component-interop demos">
-  <button role="tab" id="tab-interop"    data-handler="interop"    aria-controls="panel-interop"    aria-selected="true"  tabindex="0">Interop</button>
-  <button role="tab" id="tab-query"      data-handler="query"      aria-controls="panel-query"      aria-selected="false" tabindex="-1">Shared SPARQL</button>
-  <button role="tab" id="tab-navigation" data-handler="navigation" aria-controls="panel-navigation" aria-selected="false" tabindex="-1">Shared Navigation</button>
-  <button role="tab" id="tab-store"      data-handler="store"      aria-controls="panel-store"      aria-selected="false" tabindex="-1">Shared Store</button>
-  <button role="tab" id="tab-auth"       data-handler="auth"       aria-controls="panel-auth"       aria-selected="false" tabindex="-1">Shared Auth</button>
-  <button role="tab" id="tab-forms"      data-handler="forms"      aria-controls="panel-forms"      aria-selected="false" tabindex="-1">Auto-generated Forms</button>
+  <button role="tab" id="tab-interop"    data-handler="interop"    aria-controls="panel-interop"    aria-selected="true"  tabindex="0">Clickable<br>Components</button>
+  <button role="tab" id="tab-query"      data-handler="query"      aria-controls="panel-query"      aria-selected="false" tabindex="-1">Shared<br>SPARQL</button>
+  <button role="tab" id="tab-navigation" data-handler="navigation" aria-controls="panel-navigation" aria-selected="false" tabindex="-1">Shared<br>Navigation</button>
+  <button role="tab" id="tab-store"      data-handler="store"      aria-controls="panel-store"      aria-selected="false" tabindex="-1">Shared<br>Store</button>
+  <button role="tab" id="tab-auth"       data-handler="auth"       aria-controls="panel-auth"       aria-selected="false" tabindex="-1">Shared<br>Auth</button>
+  <button role="tab" id="tab-forms"      data-handler="forms"      aria-controls="panel-forms"      aria-selected="false" tabindex="-1">Auto-generated<br>Forms</button>
 </div>
 
 <div role="tabpanel" id="panel-interop" aria-labelledby="tab-interop">

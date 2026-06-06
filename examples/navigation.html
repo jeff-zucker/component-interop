@@ -14,7 +14,7 @@
        descriptor) and wires their resource channels together — no glue code.
        Browse in sol-pod on the left; PodOS on the right follows the same resource. -->
   <script src="../component-interop.js"
-          data-stage="auto" data-manifest-default="off"
+          data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
           data-components="sol-pod @pod-os/elements"
   ></script>
@@ -36,6 +36,8 @@
   </style>
 </head>
 <body>
+
+<button type="button" class="view-code-btn">View code</button>
 
 <h1>Shared Navigation — open a resource with one library, both libraries follow</h1>
 
@@ -68,7 +70,7 @@
 &lt;!-- <b>USE COMPONENT-INTEROP TO LOAD TWO SETS OF COMPONENTS</b>
 --&gt;
 &lt;script src="component-interop.js"
-        data-stage="auto" data-manifest-default="off"
+        data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
         data-components="sol-pod @pod-os/elements"
 &gt;&lt;/script&gt;

@@ -18,7 +18,6 @@
        its whole point: direct DOM insertion of a component from a click. -->
   <script src="../component-interop.js"
           data-stage="auto"
-          data-manifest-default="off"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
           data-components="@pod-os/elements"
   ></script>
@@ -32,14 +31,15 @@
     h2:first-of-type { margin-top: .25rem; }
     p { margin: 0 0 1rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
-    pre { background: #f6f8fa; border: 1px solid #d7dde5; border-radius: 6px;
-      padding: .85rem 1rem; overflow: auto; margin: 0 0 1rem;
+    pre, xmp { background: #f6f8fa; border: 1px solid #d7dde5; border-radius: 6px;
+      padding: .85rem 1rem; overflow: auto; margin: 0 0 1rem; display: block;
       font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     pre code { background: none; padding: 0; }
 
-    /* The picker paragraph sits at left, the narrow live demo to its right. */
+    /* Left column (prose + code blocks) beside the live demo on the right. */
     .picker-row { display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap; margin: 0 0 1.5rem; }
-    .picker-row > p { flex: 1 1 18rem; margin: 0; }
+    .picker-left { flex: 1 1 20rem; min-width: 0; }   /* min-width:0 lets <pre>/<xmp> scroll, not overflow */
+    .picker-left > :first-child { margin-top: 0; }
     /* The live demo is a mini version of the whole page: dark surround, white content. */
     .live { background: #2f333d; border-radius: 8px; padding: .75rem; flex: 0 0 auto; width: 50%; }
     .live pos-app { display: block; }
@@ -60,17 +60,18 @@
   </style>
 </head>
 <body>
+<p>In order for a click on a menu, tab, button, or other UI widget to invoke a component, we need to write a script that finds the appropriate component, and creates a new element. By importing the <code>data-handler</code> attribute from Sol Components, we can skip all of that and gain the ability to pass the component parameters from the button or menu item without scripting.</p>
 
-<h2>Clicakable Components</h2>
-<p>A menu, tab, button, or other UI widget can directly call up HTML pages but usually can not directly call a component.  By importing the <code>data-handler</code> attribute from Sol Components, components become first class citizens, directly callable from a click.</p>
-
-</ol>
 <div class="picker-row">
+  <div class="picker-left">
+    <p>The picker at right uses the <code>data-handler</code> attribute on vanilla HTML buttons to create a tabset that displays the PodOS component <code>pos-image</code>.</p>
 
-<p>The picker at right uses the <code>data-handler</code> attribute on ordinary buttons to create a tabset that display the PodOS component <code>pos-image</code>.<br><br><code>data-handler</code> supports directly displayhing components based on clicks in menus, tabs, selectors, and buttons.</p>
+    <p>The <code>data-handler</code> attribute is polite - it provides an action mechanism and a value transfer, but has nothing to say about how your app uses or displays the component called by the handler - CSS, light/shadow, where the item is placed - those are your decisions to make.</p>
 
+<button type="button" class="view-code-btn">View code</button>
+</div>
 
-<div class="live">
+  <div class="live">
   <pos-app>
     <div class="mini-tabs" role="group" aria-label="Pod photos" id="pos-photos">
       <button type="button"

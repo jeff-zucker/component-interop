@@ -3,10 +3,10 @@
 // Loaded by BOTH the tab shell (index.html) and each demo page. Two roles:
 //  • In any document it defines window.solposViewCode(sections) — builds and opens
 //    a tall, light-theme <dialog> in THAT document.
-//  • In a page that carries demo code (#demo-code) it also adds the top-right
-//    "View code" button. On click it opens the modal in the TOP-LEVEL shell (so it
-//    fills almost the whole window height), falling back to the local document when
-//    the page is opened on its own.
+//  • If the page includes its OWN button (<button class="view-code-btn">) it WIRES it
+//    (it never injects one — put the button in your HTML where you want it). On click
+//    it opens the modal in the TOP-LEVEL shell (so it fills almost the whole window
+//    height), falling back to the local document when the page is opened on its own.
 
 (function () {
   // A <template> lets a page author the snippet as PLAIN HTML (inert, never rendered
@@ -22,8 +22,7 @@
     var style = doc.createElement('style');
     style.id = 'view-code-style';
     style.textContent = `
-      .view-code-btn { position: fixed; top: 1rem; right: 1rem; z-index: 20;
-        font: inherit; font-size: .85rem; padding: .35rem .75rem; cursor: pointer;
+      .view-code-btn { font: inherit; font-size: .85rem; padding: .35rem .75rem; cursor: pointer;
         border: 1px solid #b9ccea; border-radius: 6px; background: #eef4ff; color: #1a3a6b; }
       .view-code-btn:focus-visible { outline: 2px solid #2a5db0; outline-offset: 2px; }
       dialog.view-code-dialog { width: min(72rem, 95vw); height: 94vh; max-height: 94vh;
@@ -111,15 +110,14 @@
   // That file is plain HTML — write any text around <xmp> blocks (each shows its
   // contents verbatim as code). On click we fetch it and render it in the modal.
   // (Legacy: a page with #demo-code [+ #demo-manifests] is shown as plain code blocks.)
+  // The page puts the button in its OWN HTML, wherever it wants it:
+  //   <button class="view-code-btn">View code</button>
+  // We only WIRE it — never inject one.
   var link = document.querySelector('link[rel="view-code"]');
   var codeEl = document.getElementById('demo-code');
-  if (link || codeEl) {
+  var btn = document.querySelector('.view-code-btn');
+  if (btn && (link || codeEl)) {
     ensureStyle(document);
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'view-code-btn';
-    btn.id = 'view-code-btn';
-    btn.textContent = 'View code';
     btn.setAttribute('aria-haspopup', 'dialog');
     btn.addEventListener('click', function () {
       var host = (window.parent && window.parent !== window && typeof window.parent.solposViewCode === 'function')
@@ -134,6 +132,5 @@
         host.solposViewCode(sections);
       }
     });
-    document.body.appendChild(btn);
   }
 })();

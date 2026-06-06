@@ -12,7 +12,7 @@ import { loadCI, manifests, onceEvent, requireJsdom, plain } from './helpers.js'
 
 // Convenience: a loaded, fully-ready broker with no manifests.
 async function bareCI(extra = {}) {
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', ...(extra.dataset || {}) }, ...extra });
+  const ctx = loadCI({ dataset: { ...(extra.dataset || {}) }, ...extra });
   await ctx.api.ready;
   return ctx;
 }
@@ -76,7 +76,7 @@ test('importmap: manifest imports are injected as <script type=importmap> with r
   const { fetchMap, manifest } = manifests({
     libA: { name: 'libA', components: { 'lib-a': 'lib-a.js' } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
 
   const tag = ctx.document.querySelector('script[type="importmap"]');
@@ -91,7 +91,7 @@ test('importmap: data-importmap-extra is merged but a manifest import wins a con
     libA: { name: 'libA', components: { shared: 'shared.js' } },
   });
   const importmapExtra = JSON.stringify({ imports: { extra: 'http://x/extra.js', shared: 'http://x/loses.js' } });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest, importmapExtra }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, importmapExtra }, fetchMap });
   await ctx.api.ready;
 
   assert.equal(ctx.api.importmap.extra, 'http://x/extra.js', 'consumer extra kept');
@@ -103,7 +103,7 @@ test('importmap: if the page already owns an importmap, the broker does not inje
     libA: { name: 'libA', components: { 'lib-a': 'lib-a.js' } },
   });
   const ctx = loadCI({
-    dataset: { manifestDefault: 'off', manifest },
+    dataset: { manifest },
     fetchMap,
     domSetup: (doc) => {
       const el = doc.createElement('script');
@@ -126,7 +126,7 @@ test('manifests: the earlier manifest wins a conflicting specifier; capabilities
     first:  { name: 'first',  components: { shared: 'from-first.js' },  attributes: { 'data-view': 'v1.js' } },
     second: { name: 'second', components: { shared: 'from-second.js' }, attributes: { 'data-view': 'v2.js' } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
 
   assert.equal(ctx.api.importmap.shared, 'http://localhost/from-first.js', 'first manifest wins the specifier');
@@ -140,7 +140,7 @@ test('broker: a consumer is wired to another library\'s provider and invoked wit
     provider: { name: 'provider', objects: { provides: { greeting: { respondTo: 'ev:greet', sendValue: 'detail.text' } } } },
     consumer: { name: 'consumer', objects: { consumes: { greeting: { call: 'setGreeting' } } } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
 
   const got = [];
@@ -161,7 +161,7 @@ test('broker: a null/undefined provided value does not invoke the consumer', req
     provider: { name: 'provider', objects: { provides: { greeting: { respondTo: 'ev:greet', sendValue: 'detail.text' } } } },
     consumer: { name: 'consumer', objects: { consumes: { greeting: { call: 'setGreeting' } } } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
 
   let calls = 0;
@@ -194,7 +194,7 @@ test('pickProvider: highest priority wins when there is no preference', requireJ
     ...providerPair({ aPriority: 1, bPriority: 5 }),
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take' } } } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
   const { got, from } = await wireAndDetect(ctx, 'ev:b'); // libB has the higher priority
   assert.equal(from, 'libB');
@@ -206,7 +206,7 @@ test('pickProvider: the lower-priority (non-chosen) provider is NOT wired', requ
     ...providerPair({ aPriority: 1, bPriority: 5 }),
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take' } } } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
   let calls = 0;
   ctx.api.registerConsumer('take', () => { calls++; });
@@ -220,7 +220,7 @@ test('pickProvider: consumer "from" overrides priority', requireJsdom(), async (
     ...providerPair({ aPriority: 5, bPriority: 1 }),
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take', from: 'libB' } } } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
   const { from } = await wireAndDetect(ctx, 'ev:b');
   assert.equal(from, 'libB', 'explicit "from" beats libA\'s higher priority');
@@ -232,7 +232,7 @@ test('pickProvider: data-prefer overrides everything', requireJsdom(), async () 
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take', from: 'libB' } } } },
   });
   const ctx = loadCI({
-    dataset: { manifestDefault: 'off', manifest, prefer: JSON.stringify({ thing: 'libA' }) },
+    dataset: { manifest, prefer: JSON.stringify({ thing: 'libA' }) },
     fetchMap,
   });
   await ctx.api.ready;
@@ -245,7 +245,7 @@ test('pickProvider: equal priority falls back to manifest order (earliest wins)'
     ...providerPair({ aPriority: 0, bPriority: 0 }),
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take' } } } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
   const { from } = await wireAndDetect(ctx, 'ev:a'); // libA declared first
   assert.equal(from, 'libA');
@@ -260,7 +260,7 @@ test('broker: a library never consumes its OWN provide', requireJsdom(), async (
       consumes: { thing: { call: 'take' } },
     } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
   let calls = 0;
   ctx.api.registerConsumer('take', () => { calls++; });
@@ -281,7 +281,7 @@ test('accepts: a provided value is written onto another lib\'s accept target, no
     } },
   });
   const ctx = loadCI({
-    dataset: { manifestDefault: 'off', manifest },
+    dataset: { manifest },
     fetchMap,
     domSetup: (doc) => {
       doc.body.innerHTML = '<div id="target"></div><div id="self"></div>';
@@ -302,7 +302,7 @@ test('auto-load: an attribute on the page imports its module(s) and marks it', r
     lib: { name: 'lib', attributes: { 'data-handler': '@x/handler' } },
   });
   const ctx = loadCI({
-    dataset: { manifestDefault: 'off', manifest },
+    dataset: { manifest },
     fetchMap,
     domSetup: (doc) => { doc.body.innerHTML = '<button data-handler="x">go</button>'; },
   });
@@ -321,14 +321,14 @@ test('auto-load: an attribute NOT on the page loads nothing', requireJsdom(), as
   const { fetchMap, manifest } = manifests({
     lib: { name: 'lib', attributes: { 'data-handler': '@x/handler' } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });   // no [data-handler] on page
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });   // no [data-handler] on page
   await ctx.api.ready;
   await new Promise((r) => setTimeout(r, 10));
   assert.deepEqual(ctx.importedSpecs, [], 'nothing imported when the attribute is absent');
 });
 
 test('load: data-components are imported in order', requireJsdom(), async () => {
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', components: 'compA compB' } });
+  const ctx = loadCI({ dataset: { components: 'compA compB' } });
   await ctx.api.ready;
   assert.deepEqual(ctx.importedSpecs, ['compA', 'compB'], 'in listed order');
 });
@@ -337,7 +337,7 @@ test('load: a data-components token that names a bundle expands to its modules',
   const { fetchMap, manifest } = manifests({
     lib: { name: 'lib', bundles: { 'rdf': ['m1', 'm2'] } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest, components: 'rdf compX' }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, components: 'rdf compX' }, fetchMap });
   await ctx.api.ready;
   assert.deepEqual(ctx.importedSpecs, ['m1', 'm2', 'compX'], 'bundle name expands; non-bundle passes through');
 });
@@ -346,14 +346,14 @@ test('load: data-components="*" imports every component (not shared-modules)', r
   const { fetchMap, manifest } = manifests({
     lib: { name: 'lib', components: { 'el-a': 'a.js', 'el-b': 'b.js' }, 'shared-modules': { 'dep': 'dep.js' } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest, components: '*' }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, components: '*' }, fetchMap });
   await ctx.api.ready;
   assert.deepEqual(ctx.importedSpecs.slice().sort(), ['el-a', 'el-b'], 'all components, no shared-modules');
 });
 
 // ── lifecycle ──────────────────────────────────────────────────────────────────────
 test('lifecycle: interop:ready fires and api.ready resolves with the api', requireJsdom(), async () => {
-  const ctx = loadCI({ dataset: { manifestDefault: 'off' } });
+  const ctx = loadCI({ dataset: {} });
   const readyEvent = onceEvent(ctx.window, 'interop:ready');
   const resolved = await ctx.api.ready;
   const e = await readyEvent;
@@ -362,33 +362,16 @@ test('lifecycle: interop:ready fires and api.ready resolves with the api', requi
 });
 
 test('lifecycle: a bad data-prefer JSON is ignored with a warning, not a throw', requireJsdom(), async () => {
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', prefer: '{not json' } });
+  const ctx = loadCI({ dataset: { prefer: '{not json' } });
   await ctx.api.ready;
   assert.ok(ctx.logs.warn.some((m) => m.includes('data-prefer')), 'warned about invalid data-prefer');
 });
 
 test('lifecycle: a non-OK manifest fetch is reported and skipped, load still completes', requireJsdom(), async () => {
   // data-manifest points at a URL that is not in the fetchMap -> 404.
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest: 'missing.manifest.json' }, fetchMap: {} });
+  const ctx = loadCI({ dataset: { manifest: 'missing.manifest.json' }, fetchMap: {} });
   await ctx.api.ready; // resolves despite the failed manifest
   assert.ok(ctx.logs.error.some((m) => m.includes('missing.manifest.json')), 'the failed manifest was reported');
-});
-
-test('manifests: the default sibling <basename>.manifest.json is auto-loaded (trusted)', requireJsdom(), async () => {
-  // No manifestDefault:'off' here — the loader fetches its own sibling manifest,
-  // derived from its script src.
-  const ctx = loadCI({
-    src: 'http://localhost/component-interop.js',
-    fetchMap: {
-      'http://localhost/component-interop.manifest.json': {
-        name: 'component-interop',
-        attributes: { 'data-handler': './handler.js' },
-      },
-    },
-  });
-  await ctx.api.ready;
-  assert.deepEqual(plain(ctx.api.manifest.attributes['data-handler']), ['http://localhost/handler.js'],
-    'sibling attribute module resolved against the manifest URL');
 });
 
 test('broker: a provider can deliver its value over a SERVICE channel', requireJsdom(), async () => {
@@ -396,7 +379,7 @@ test('broker: a provider can deliver its value over a SERVICE channel', requireJ
     provider: { name: 'provider', objects: { provides: { store: { service: 'rdf', sendValue: 'value' } } } },
     consumer: { name: 'consumer', objects: { consumes: { store: { call: 'useStore' } } } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
 
   const got = [];
@@ -411,7 +394,7 @@ test('broker: a provided value with no registered consumer warns', requireJsdom(
     provider: { name: 'provider', objects: { provides: { greeting: { respondTo: 'ev:greet', sendValue: 'detail.text' } } } },
     consumer: { name: 'consumer', objects: { consumes: { greeting: { call: 'missingConsumer' } } } },
   });
-  const ctx = loadCI({ dataset: { manifestDefault: 'off', manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
   ctx.api.emit('ev:greet', { text: 'hi' }); // 'missingConsumer' was never registered
   await new Promise((r) => setTimeout(r, 5));
@@ -427,7 +410,7 @@ test('accepts: with no transform the raw provided value is written (hash kept)',
     raw:     { name: 'raw',     objects: { accepts:  { resource: { onElement: '#raw', applyValueTo: 'resource' } } } },
   });
   const ctx = loadCI({
-    dataset: { manifestDefault: 'off', manifest }, fetchMap,
+    dataset: { manifest }, fetchMap,
     domSetup: (doc) => { doc.body.innerHTML = '<div id="raw"></div>'; },
   });
   await ctx.api.ready;
@@ -438,7 +421,7 @@ test('accepts: with no transform the raw provided value is written (hash kept)',
 
 test('security: a cross-origin data-manifest is refused', requireJsdom(), async () => {
   const ctx = loadCI({
-    dataset: { manifestDefault: 'off', manifest: 'http://evil.example/m.manifest.json' },
+    dataset: { manifest: 'http://evil.example/m.manifest.json' },
     fetchMap: { 'http://evil.example/m.manifest.json': { name: 'evil', components: { x: 'x.js' } } },
   });
   await ctx.api.ready;

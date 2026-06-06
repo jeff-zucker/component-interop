@@ -14,7 +14,7 @@
        (its manifest). The data-edit-* attributes below auto-load swc's rdf-bundle,
        so a plain element on this PodOS page becomes a form from a SHACL shape. -->
   <script src="../component-interop.js"
-          data-stage="auto" data-manifest-default="off"
+          data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
           data-components="@pod-os/elements"
   ></script>
@@ -35,6 +35,8 @@
   </style>
 </head>
 <body>
+
+<button type="button" class="view-code-btn">View code</button>
 
 <h1>Forms — a PodOS page, gaining Solid Web Components editing</h1>
 
@@ -73,7 +75,7 @@
 
 <pre id="demo-code" hidden>
 &lt;script src="component-interop.js"
-        data-stage="auto" data-manifest-default="off"
+        data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
         data-components="@pod-os/elements"
 &gt;&lt;/script&gt;

@@ -15,7 +15,7 @@
        and, on demand, Comunica (resolved by the manifest), the engine that runs a
        real SPARQL query against a remote endpoint. -->
   <script src="../component-interop.js"
-          data-stage="auto" data-manifest-default="off"
+          data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
           data-components="@pod-os/elements"
   ></script>
@@ -45,6 +45,8 @@
 </head>
 <body>
 
+<button type="button" class="view-code-btn">View code</button>
+
 <h1>Query — a PodOS page, running real SPARQL through Comunica</h1>
 
 <div class="intro">
@@ -70,7 +72,7 @@
 
 <pre id="demo-code" hidden>
 &lt;script src="component-interop.js"
-        data-stage="auto" data-manifest-default="off"
+        data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
         data-components="@pod-os/elements"
 &gt;&lt;/script&gt;
