@@ -16,7 +16,7 @@
        real SPARQL query against a remote endpoint. -->
   <script src="../component-interop.js"
           data-stage="cdn"
-          data-manifest="../../sol-components/dist/sol-loader.manifest.json pod-os.manifest.json"
+          data-manifest="sol-components.manifest.json pod-os.manifest.json"
           data-components="@pod-os/elements"
   ></script>
 
@@ -61,7 +61,7 @@
 </div>
 
 <pre>    <i>// we load the PodOS and Sol manifests</i>
-    data-manifest="sol-loader.manifest.json pod-os.manifest.json"
+    data-manifest="sol-components.manifest.json pod-os.manifest.json"
 
     <i>// we load the PodOS components BUT NOT the Sol components</i>
     data-components="@pod-os/elements"                       
@@ -70,7 +70,7 @@
 <pre id="demo-code" hidden>
 &lt;script src="component-interop.js"
         data-stage="cdn"
-        data-manifest="sol-loader.manifest.json pod-os.manifest.json"
+        data-manifest="sol-components.manifest.json pod-os.manifest.json"
         data-components="@pod-os/elements"
 &gt;&lt;/script&gt;
 
