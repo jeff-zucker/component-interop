@@ -107,7 +107,7 @@ Conventions that make N libraries coherent:
    picks one in this order: **`data-prefer`** (a JSON map `capability → library`, the page/app's
    call) → the consumer's **`from`** → highest provider **`priority`** → earliest in manifest order.
    See `examples/multi-provider/`.
-4. **Namespace global names.** `registerConsumer` handler names and `data-handler` values are
+4. **Namespace global names.** `registerConsumer` handler names are
    page-global — prefix them (`libA.adoptStore`) so two libraries don't collide.
 5. **Cross-origin libraries.** `data-manifest` URLs must be same-origin (they name modules the loader
    `import()`s), but the import *targets inside* a manifest may be cross-origin (a CDN). So for
@@ -127,58 +127,13 @@ Conventions that make N libraries coherent:
 
 (There is no `data-extend-with` — attributes auto-load when their `data-*` appears on the page.)
 
-## The `data-handler` attribute (any element calls a component or script)
-
-A built-in attribute that lets **any** element — a library's own button/menu, a plain link —
-activate a component or a script. ci does the **wiring only**; it never decides placement. ci's own
-manifest maps `data-handler` → `./handler.js`, so it **auto-loads** the moment a `data-handler`
-appears — nothing to opt into:
-
-```html
-<script src="component-interop.js"></script>
-```
-
-Mark any element with `data-handler` (no JS on the element — ci delegates the click/Enter):
-
-```html
-<a data-handler="my-viewer" href="report.ttl" data-mode="compact">Open</a>   <!-- a component -->
-<button data-handler="exportCsv" data-format="utf8">Export</button>          <!-- a script -->
-```
-
-On activation ci collects the element's payload (`href` + `data-*`, prefix stripped), and **if the
-handler names a custom-element tag** (`includes('-')` or registered) instantiates it with the
-payload forwarded as attributes. Then it fires **one** event from the source element:
-
-```js
-e.detail = {
-  handler: "my-viewer",       // the data-handler value
-  element: <my-viewer …>,     // the instance ci built — or null for a bare-name (script) handler
-  data:    { href:"report.ttl", mode:"compact" },
-  source:  <a data-handler…>  // the element activated
-}
-```
-
-The **entire** consumer burden is one listener that decides what/where:
-
-```js
-document.addEventListener('interop:activate', (e) => {
-  const { handler, element, data, source } = e.detail;
-  if (element) source.closest('.pane').querySelector('.output').replaceChildren(element); // place it
-  else if (handler === 'exportCsv') exportTheTable(data);                                 // run it
-});
-```
-
-ci makes no placement decisions and adds no modal/region machinery — `interop:activate` is the
-single path. See `examples/handler/`.
-
 ## API (`window.ComponentInterop`)
 
 `ready` (Promise) · `load(bundles, {with})` · `manifest` · `loaded` · `version` ·
 `registerCapability(name, {modules, attributes})` · `registerConsumer(name, fn)` ·
 `services` (register / get / has / names / whenReady) · `has(name)` · `capabilities` ·
 `on(name, fn)` · `emit(name, detail)`. Events: `interop:ready`, `interop:capability` (per
-capability), `interop:wired` (per provide→consume binding), `interop:activate` (per `data-handler`
-activation).
+capability), `interop:wired` (per provide→consume binding).
 
 ## Security
 
@@ -188,17 +143,12 @@ library-provided **registry**, never `eval`'d from a manifest string.
 
 ## Examples
 
-- `examples/basic/` — two toy libraries (`lib-a` provides a greeting, `lib-b` consumes it) wired by
-  the broker. Zero dependencies, no glue. Serve the folder and open `examples/basic/index.html`.
-- `examples/handler/` — the `handler` capability: a plain link/button with `data-handler` activates
-  a component (ci instantiates it) or a script, and one `interop:activate` listener places the result.
-- `examples/multi-provider/` — two libraries provide the same capability; `data-prefer` chooses which
-  one the consumer adopts (the multi-provider preference rule).
-- `examples/solpos/` — two real libraries, [Solid Web Components](https://github.com/jeff-zucker/sol-components)
-  and [PodOS](https://github.com/pod-os/PodOS), working together on one page: browse a pod in one and
-  the other follows, and a PodOS page gaining SPARQL from an swc capability. (Needs the swc working
-  tree served alongside; see that folder's README.)
-  
+`examples/` is a live, runnable demo — a PodOS app gaining Solid Web Components capabilities, wired
+entirely by the broker, no glue. Open **`examples/index.html`** (a tabbed shell): SPARQL on a plain
+element, a shared store, shared navigation, auto-generated forms, and auth — each a swc capability
+adopted by a PodOS page. It loads [sol-components](https://github.com/jeff-zucker/sol-components) and
+[PodOS](https://github.com/pod-os/PodOS) from the CDN, so it runs from this repo alone.
+
 ## Transparency
 
 Portions created using Claude Opus 4.8.

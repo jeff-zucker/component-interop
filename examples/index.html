@@ -6,11 +6,12 @@
   <meta name="color-scheme" content="light">
   <title>Component Interop — demo of sharing resources between two component libraries</title>
 
-  <!-- The shell just loads component-interop for its tabs: each tab button is
-       data-handler="…", so ci auto-loads its handler.js when those appear, and one
-       interop:activate listener swaps the panel. Every tab is a self-contained page in
-       an iframe (the first, Interop, demonstrates ci itself). -->
-  <script src="../component-interop.js"></script>
+  <!-- The shell's tabs use data-handler (a sol-components capability), so it loads
+       sol-components' manifest from the CDN; one interop:activate listener swaps the
+       panel. Every tab is a self-contained page in an iframe. -->
+  <script src="../component-interop.js"
+          data-stage="cdn"
+          data-manifest="sol-components.manifest.json"></script>
 
   <style>
     :root { color-scheme: light; font-size: 18px; }

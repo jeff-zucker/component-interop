@@ -1,6 +1,0 @@
-{
-  "name": "component-interop",
-  "attributes": {
-    "data-handler": "./handler.js"
-  }
-}

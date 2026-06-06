@@ -15,9 +15,8 @@ built-in `--experimental-test-coverage`; no extra tooling.)
 ## Why these tests need a DOM, and how that stays zero-dependency
 
 `component-interop.js` is browser code — a classic-script IIFE that builds
-`window.ComponentInterop` from `document.currentScript` — and `handler.js` is a
-DOM-driven ES module. Exercising them under Node needs a DOM, which we get from
-**jsdom**.
+`window.ComponentInterop` from `document.currentScript`. Exercising it under Node
+needs a DOM, which we get from **jsdom**.
 
 But the package itself is **zero-dependency**, so jsdom is **not** a repo
 dependency and is **not** in `package.json`. Instead `helpers.js` resolves jsdom
@@ -39,8 +38,6 @@ npm install -g jsdom      # global — keeps this repo clean
   IIFE in a fresh jsdom realm with stubbed `fetch` (manifest map), an
   interceptable dynamic `import()`, and a captured `console`. Also `manifests()`,
   `onceEvent()`, and the `requireJsdom()` skip guard.
-- **`handler.test.js`** — `handler.js`: `isComponentTag`, `collectData`,
-  `activate`, and the document-delegated click / Enter-Space activation.
 - **`interop.test.js`** — the broker/loader public surface: the host-services
   registry, the consumer registry, `registerCapability`, importmap injection
   (incl. page-owns-it and `data-importmap-extra`), manifest merging (first-wins),
