@@ -6,12 +6,11 @@ xmp {margin-top:0;}
 <h2>1. In the app head, invoke component-interop</h2>
 <xmp><script src="../../component-interop.js"
         data-stage="local"                    // user decides to stage prereqs local/CDN
-        data-manifest="pod-os.manifest.json"  // user points at one URL, not one per prereq
+        data-manifest="pod-os.manifest.json"  // user points at one URL, not one per prereq/component
         data-components="@pod-os/elements"    // here we import one library's components
 ></script></xmp>
 
 <h2>2. In the app body, add the data-handler attribute to any element</h2>
-<p>The <i>data-handler</i> names the component to build; the other attributes get sent to that component.</p>
 <xmp><pos-app><div id="pos-photos">
     <button data-handler="pos-image"
             data-src="https://timbl.solidcommunity.net/profile/TBL%20by%20coz%20Solid%20purple.png"
@@ -22,19 +21,13 @@ xmp {margin-top:0;}
     <button data-handler="pos-image"
             data-src="https://virginiabalseiro.com/assets/images/profile.jpg"
             data-alt="Virginia Balseiro">Virginia</button>
-  </div>
-  <div id="pos-pane"></div></pos-app>
+</div><div id="pos-pane"></div></pos-app>
 </xmp>
 
-<h2>3. Listen once; drop the instance ci built into the DOM</h2>
-<xmp>
-<script>
-  var photoBtns = function () { return Array.prototype.slice.call(document.querySelectorAll('#pos-photos button')); };
-
+<h2>3. Listen for 'interop:activate', you're done!</h2>
+<xmp><script>
   document.addEventListener('interop:activate', function (e) {
     if (e.detail.handler !== 'pos-image') return;
     document.getElementById('pos-pane').replaceChildren(e.detail.element);   // that's the whole job
-    photoBtns().forEach(function (b) { b.setAttribute('aria-pressed', String(b === e.detail.source)); });
   });
-</script>
-</xmp>
+</script></xmp>
