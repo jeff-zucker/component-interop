@@ -22,7 +22,8 @@
     },
     "consumes": {
       "store": {
-        "call": "rdf.useStore"
+        "call": "rdf.useStore",
+        "module": "sol-components/core/rdf.js"
       },
       "auth": {
         "call": "adoptFetch"

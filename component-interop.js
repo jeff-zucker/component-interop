@@ -31,7 +31,7 @@
  *                     "data-a data-b": "rdf" },               // (space-separated keys share modules)
  *     "objects": {
  *       "provides": { key: { service|respondTo: "…", sendValue: "…", priority?: n } }, // offer a value (service or event; respondTo may be a list)
- *       "consumes": { key: { call: "<registered-consumer>", from?: "<lib>" } }, // adopt it by calling a handler
+ *       "consumes": { key: { call: "<registered-consumer>", from?: "<lib>", module?: "<spec>" } }, // adopt it by calling a handler (module: code to eager-load for data-objects)
  *       "accepts":  { key: { onElement: "…", applyValueTo: "…", transform?: "stripHash" } } } } // adopt it by setting a DOM attribute
  * Relative import URLs resolve against THAT manifest's URL. The earlier manifest
  * wins a conflicting specifier (so a shared dep stays single). The broker pairs a
@@ -43,11 +43,13 @@
  * registered function, never an arbitrary string. So the broker stays ignorant
  * of any library's actual API.
  *
- * data-* attributes: data-components (specifiers, or `*` for all), data-stage
- * (`local`|`cdn`|`auto` — auto picks local on localhost/file:, cdn elsewhere),
- * data-manifest (SAME-ORIGIN URLs to merge), data-importmap-extra (inline
- * importmap JSON), data-base (resolve data-manifest paths), data-prefer (JSON map
- * key→preferred provider library, for multi-library pages).
+ * data-* attributes: data-components (specifiers, or `*` for all), data-objects
+ * (object-capability keys to consume — eager-loads each key's `module` before
+ * data-components, so a consumer is registered before any provider fires),
+ * data-stage (`local`|`cdn`|`auto` — auto picks local on localhost/file:, cdn
+ * elsewhere), data-manifest (SAME-ORIGIN URLs to merge), data-importmap-extra
+ * (inline importmap JSON), data-base (resolve data-manifest paths), data-prefer
+ * (JSON map key→preferred provider library, for multi-library pages).
  *
  * API on window.ComponentInterop: ready (Promise), load(components), manifest,
  * loaded, version, registerCapability("data-x", modules),
@@ -223,7 +225,16 @@
     var attrs = m.attributes || {};
     for (var a in attrs) if (own(attrs, a)) mergeAttributes(a, attrs[a], url);
     // objects: per-library shared-value declarations (keyed by library name).
-    if (m.objects && m.name) interopSources.push({ name: m.name, interop: m.objects });
+    if (m.objects && m.name) {
+      interopSources.push({ name: m.name, interop: m.objects });
+      // An object declaration may name the `module` that registers its code
+      // (e.g. a `consumes.call` handler). `data-objects="key"` eager-loads it.
+      ['provides', 'consumes', 'accepts'].forEach(function (g) {
+        var blk = m.objects[g]; if (!blk) return;
+        for (var key in blk) if (own(blk, key) && blk[key] && blk[key].module)
+          objectModules[key] = addSpecs((objectModules[key] || []), blk[key].module, url);
+      });
+    }
   }
 
   // The manifests to merge: the SAME-ORIGIN data-manifest URLs — each names the
@@ -258,6 +269,7 @@
   // ── the broker: glueless provide/consume matchmaking ───────────────────────
   var interopSources = [];   // [{ name, interop }] collected from manifests
   api.interop = interopSources;
+  var objectModules = {};    // object key → module specifier(s) (for data-objects)
 
   function getByPath(obj, path) {
     if (!path) return obj;
@@ -388,6 +400,24 @@
   }
   api.load = load;
 
+  // Eager-load the code behind `data-objects` keys. An object capability's
+  // handler (e.g. a `consumes.call` like `rdf.useStore`) must be REGISTERED
+  // before a provider fires its value — so these load before `data-components`.
+  function loadObjects(keys) {
+    ensureImportmap();
+    var list = toList(keys);
+    if (!list.length) return Promise.resolve();
+    var specs = [];
+    list.forEach(function (k) {
+      if (objectModules[k]) addSpecs(specs, objectModules[k], '');
+      else console.warn('[component-interop] data-objects "' + k + '": no `module` declared in any manifest objects block');
+    });
+    return importSeq(expandAll(specs)).then(function () {
+      list.forEach(function (k) { if (objectModules[k]) markCapability(k); });
+    });
+  }
+  api.loadObjects = loadObjects;
+
   function announce() {
     resolveReady(api);
     var detail = { loaded: api.loaded };
@@ -422,6 +452,8 @@
     ensureImportmap();
     installInterop();   // before load(): so listeners catch provider events that
                         // fire while a library's modules import
+    return loadObjects(ds.objects);   // consumer code first, before providers boot
+  }).then(function () {
     return load(auto);
   }).then(function () {
     announce();

@@ -22,8 +22,16 @@ xmp { margin-top: 0; }
   ></ul>
 </pos-app></xmp>
 
+<h2>Or a triple **pattern** — with no endpoint it reads the SHARED store, live</h2>
+<xmp><!-- No `endpoint`: the pattern matches the shared rdflib graph (what PodOS,
+     solid-logic, etc. populate) and RE-RUNS whenever a matching triple changes.
+     CURIEs (foaf:, rdfs:, …) are expanded for you. -->
+<ul data-from-query
+    pattern="<https://timbl.solidcommunity.net/profile/card#me> foaf:name ?name"
+></ul></xmp>
+
 <h2>This illustrates Data-from-query in a ul element.  If you use it in a custom element, you can retrieve the data as a JSON object. See the <a href="">Using data-from-query in a custom element</a>.
 
-<h2>Data-from-query has many other options (search by triple pattern, stored queries, replaceable parameter queries, and more) see the <a href="">Sol-Component sol-query documents</a>.
+<h2>Data-from-query has many other options (live shared-store triple patterns, stored queries, replaceable parameter queries, and more) see the <a href="">Sol-Component sol-query documents</a>.
 
 

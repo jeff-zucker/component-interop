@@ -1,23 +1,41 @@
+   Here's the whole code on the Sol-Component side:
+    <div><b>&lt;img data-from-query pattern="ex:currentPerson schema:photo ?url"></b></div>
+
 <style>
 h2  { margin-bottom: 0; }
 xmp { margin-top: 0; }
 </style>
 
-<xmp><!-- Load swc's rdf core BEFORE PodOS so swc's rdf.useStore consumer is
-     registered before pod-os:loaded fires -->
+<xmp><!-- data-objects="store" loads swc's store consumer before PodOS boots, so swc
+     adopts PodOS's store. data-from-query is swc's live reader of that graph. -->
 <script src="../component-interop.js"
         data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
-        data-components="sol-components/core/rdf.js @pod-os/elements"
+        data-components="@pod-os/elements"
+        data-objects="store"
+        data-attributes="data-from-query"
 ></script>
 
-<!-- PodOS loads a resource into its rdflib store -->
+<!-- PodOS owns the shared graph. Plain buttons pick the current person. -->
 <pos-app>
-  <pos-resource uri="https://timbl.solidcommunity.net/profile/card"></pos-resource>
+  <button class="person-pick" value="https://angelo.veltens.org/profile/me.jpg">Angelo Veltens</button>
+  …
 </pos-app>
 
-<!-- swc has adopted that very graph (rdf.useStore): -->
+<!-- swc adopted that graph (rdf.useStore). On an <img>, data-from-query sets the
+     matched URI as its src — no `endpoint`, so nothing is fetched — re-running
+     when a button writes. -->
+<img data-from-query pattern="<urn:solpos:currentPerson> <https://solpos.example/ns#photo> ?url">
+
 <script type="module">
-  const { store } = ComponentInterop.services.get('rdf');
-  // `store` IS PodOS's internalStore — same object, same triples
+  // Picking a person writes their foaf:name and photo into the shared store;
+  // the <img data-from-query> above mirrors the photo live.
+  const rdf = window.ComponentInterop.services.get('rdf');
+  const s = rdf.sym('urn:solpos:currentPerson');
+  const set = (p, o) => {
+    rdf.store.statementsMatching(s, rdf.sym(p), null).forEach((st) => rdf.store.remove(st));
+    rdf.store.add(s, rdf.sym(p), o, s.doc());
+  };
+  set('http://xmlns.com/foaf/0.1/name', rdf.literal('Angelo Veltens'));
+  set('https://solpos.example/ns#photo', rdf.sym('https://angelo.veltens.org/profile/me.jpg'));
 </script></xmp>

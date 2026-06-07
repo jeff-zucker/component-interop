@@ -171,6 +171,34 @@ test('broker: a null/undefined provided value does not invoke the consumer', req
   assert.equal(calls, 0);
 });
 
+// ── data-objects: eager-load a consumed object's module, before data-components ───
+test('data-objects loads a consumed object\'s `module`, before data-components', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    consumer: {
+      name: 'consumer',
+      components: { 'x-widget': 'widget.js' },
+      objects: { consumes: { store: { call: 'useStore', module: 'store-core.js' } } },
+    },
+  });
+  const ctx = loadCI({ dataset: { manifest, objects: 'store', components: 'x-widget' }, fetchMap });
+  await ctx.api.ready;
+
+  assert.deepEqual(ctx.importedSpecs, ['store-core.js', 'x-widget'],
+    'the object module loads first, then the components');
+  assert.ok(ctx.api.has('store'), 'the object key is marked as a live capability');
+});
+
+test('data-objects with no declared `module` warns and does not throw', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    consumer: { name: 'consumer', objects: { consumes: { store: { call: 'useStore' } } } },
+  });
+  const ctx = loadCI({ dataset: { manifest, objects: 'store' }, fetchMap });
+  await ctx.api.ready;
+
+  assert.deepEqual(ctx.importedSpecs, [], 'nothing imported when no module is declared');
+  assert.ok(ctx.logs.warn.some((w) => w.includes('data-objects "store"')), 'warns about the missing module');
+});
+
 // ── pickProvider: choosing among several providers of the same capability ─────────
 // Each provider uses a DISTINCT event so we can detect which one the broker wired.
 function providerPair(extra = {}) {

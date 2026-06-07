@@ -66,7 +66,8 @@
 <div class="picker-row">
   <div class="picker-left intro">
 <p>The listing to the right is generated from a vanilla HTML &lt;ul&gt; inside a PodOS app enhanced with <code>data-from-query</code> which queries DBpedia for Turing Award recipients.</p>
-<p>If the <code>data-from-query</code> appears in plain element like a ul or select, it will supoly the query results appropriately as li or option items.  If it appears in custom element, the query results are available to that element as a standards compliant JSON object.</p>
+<p>If the <code>data-from-query</code> appears in plain element like a ul or select, it will supoly the query results appropriately as li or option items.  On an <code>&lt;img&gt;</code> it sets the <code>src</code> to the result URI.  If it appears in custom element, the query results are available to that element as a standards compliant JSON object.</p>
+<p>Besides remote SPARQL, <code>data-from-query</code> also takes a triple <code>pattern</code> (CURIEs allowed). With no <code>endpoint</code> it matches the <strong>shared</strong> rdflib store — reading what another library (e.g. PodOS) loaded — and <strong>re-runs live</strong> whenever a matching triple changes. (See the <a href="store.html">Shared Store</a> demo.)</p>
 <!-- <p><a href="from-query-handler.html">Handling the results in your own element &rarr;</a></p> -->
   </div>
 

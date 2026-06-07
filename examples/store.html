@@ -4,21 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>solpos — Shared Store: PodOS and Solid Web Components on one RDF graph</title>
+  <title>solpos — Shared Store: pick on the PodOS side, mirror on the swc side</title>
 
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
   >
 
   <!-- component-interop wires the rdf capability: PodOS PROVIDES its RDF store
-       (pod-os:loaded → os.store.internalStore); swc CONSUMES it (rdf.useStore). We
-       load swc's rdf core FIRST so its consumer is registered before PodOS fires
-       pod-os:loaded — then swc adopts PodOS's store and both read one graph. -->
+       (pod-os:loaded → os.store.internalStore); swc CONSUMES it (data-objects="store"
+       → rdf.useStore). The broker loads the store consumer before PodOS boots, so
+       swc adopts PodOS's store and both read one graph. The `data-from-query`
+       attribute makes any element a live triple-pattern reader of that graph. -->
   <link rel="view-code" href="store.modal.html">
   <script src="../component-interop.js"
           data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
-          data-components="sol-components/core/rdf.js @pod-os/elements"
+          data-components="@pod-os/elements"
+          data-objects="store"
+          data-attributes="data-from-query"
   ></script>
 
   <style>
@@ -27,108 +30,105 @@
     body  { font: 1rem/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
     h1    { font-size: 1.5rem; }
     .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
-             padding: 1rem 1.25rem; color: #1a1a1a; }
-    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1.25rem 0; background: #fff; }
+             padding: 1rem 1.25rem; color: #1a1a1a; margin-bottom:1rem; }
+    .panels { display: grid; grid-template-columns: 1fr 2fr; gap: 1.25rem; align-items: start; }
+    @media (max-width: 40rem) { .panels { grid-template-columns: 1fr; } }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; background: #fff; }
     .card h2 { font-size: 1.05rem; margin: 0 0 .75rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
-    pos-container-contents { display: block; max-height: 10em; overflow-y: auto; margin: 0; }
-    table.proof { border-collapse: collapse; width: 100%; }
-    table.proof th, table.proof td { text-align: left; padding: .35rem .6rem; border-bottom: 1px solid #eee; }
-    table.proof th { color: #555; font-weight: 600; width: 60%; }
-    .ok { color: #1a6e1a; font-weight: 600; } .no { color: #a11; font-weight: 600; }
-    .status { color: #555; font-size: 1rem; }
+    .picker { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; }
     button { font: inherit; padding: .4rem .8rem; border: 1px solid #b9ccea; border-radius: 6px;
-             background: #eef4ff; cursor: pointer; }
+             background: #eef4ff; color: #1a1a1a; cursor: pointer; }
+    /* class+class specificity so PodOS's elements.css (plain `button {}`) can't
+       override the unselected buttons' text colour and make them illegible. */
+    .picker .person-pick { background: #eef4ff; color: #1a1a1a; }
+    .picker .person-pick[aria-pressed="true"] { background: #2b5fb3; color: #fff; border-color: #2b5fb3; }
+    img.photo { display: block; max-width: 12rem; max-height: 12rem; border-radius: 8px; margin-top: .75rem; }
+    img.photo:not([src]) { display: none; }
+    ul.value-line { list-style: none; padding: 0; font-size: 1.4rem; font-weight: 600;
+                    min-height: 1.4em; margin: .25rem 0; }
+    ul.value-line .swc-loading { color: #999; font-weight: 400; }
+    .status { color: #555; font-size: .95rem; }
   </style>
 </head>
 <body>
 
+<div class="intro">
+<p> When two component libraries have compatible stores and each agree to share,
+it becomes possible for either to write to the store so that the other can read from it.
+In the demo the left side (PodOS) writes a triple into the store with each button click. On the right side (Sol-Component), an img tag gets its src from querying the joint store, including what PodOS just put in it.
+</p>
+</div>
+
+<div class="panels">
+  <section class="card" aria-label="PodOS panel">
+    <h2>PodOS holds the shared graph — pick a person</h2>
+    <pos-app>
+      <div class="picker" role="group" aria-label="Choose the current person">
+        <button type="button" class="person-pick" aria-pressed="false"
+                value="https://timbl.solidcommunity.net/profile/TBL%20by%20coz%20Solid%20purple.png"
+        >Tim Berners-Lee</button>
+        <button type="button" class="person-pick" aria-pressed="false"
+                value="https://angelo.veltens.org/profile/me.jpg"
+        >Angelo Veltens</button>
+        <button type="button" class="person-pick" aria-pressed="false"
+                value="https://virginiabalseiro.com/assets/images/profile.jpg"
+        >Virginia Balseiro</button>
+      </div>
+    </pos-app>
+    <p class="status">Each click writes <code>&lt;currentPerson&gt; foaf:name "…"</code> (and a photo)
+      into PodOS's store.</p>
+  </section>
+
+  <section class="card" aria-label="Solid Web Components panel">
+    <h2>Sol Components reads from the shared store live</h2>
+<!--
+    <p class="status"><code>data-from-query</code> over the shared store:</p>
+    <ul class="value-line" id="name-q" aria-live="polite"
+        data-from-query
+        pattern="<urn:solpos:currentPerson> foaf:name ?name"
+    ></ul>
+    -->
+    Here's the results of an image tag enchanced by Sol-Components' <code>data-from-query</code> attribute that listens for changes in the store and alters the img's src when the store changes.
+    <img class="photo" alt=""
+         data-from-query
+         pattern="<urn:solpos:currentPerson> <https://solpos.example/ns#photo> ?url">
+  </section>
+</div>
 <button type="button" class="view-code-btn">View code</button>
 
-<h1>Shared Store — two libraries, one RDF graph</h1>
-
-<div class="intro">
-  The broker pairs PodOS's <code>provides: rdf</code> with Solid Web Components'
-  <code>consumes: rdf.useStore</code>: PodOS hands over its <code>internalStore</code> and swc
-  <strong>adopts it</strong>, so both libraries read and write <strong>the same rdflib graph</strong>
-  — no glue code. PodOS loads a resource below; the panel underneath reports the live graph as swc
-  sees it.
-</div>
-
-<div class="card">
-  <h2>PodOS loads a resource into the store</h2>
-  <pos-app>
-    <pos-resource uri="https://timbl.solidcommunity.net/profile/card">
-      <pos-container-contents></pos-container-contents>
-    </pos-resource>
-  </pos-app>
-</div>
-
-<div class="card">
-  <h2>The same graph, as Solid Web Components sees it</h2>
-  <table class="proof">
-    <tbody>
-      <tr><th>swc <code>rdf</code> service present</th><td id="swc-present">—</td></tr>
-      <tr><th>PodOS store handed to the broker</th><td id="podos-present">—</td></tr>
-      <tr><th>swc's store <em>is</em> PodOS's store (one object)</th><td id="same">—</td></tr>
-      <tr><th>Triples, counted via swc</th><td id="swc-count">—</td></tr>
-      <tr><th>Triples, counted via PodOS</th><td id="podos-count">—</td></tr>
-    </tbody>
-  </table>
-  <p>
-    <button id="load-more" type="button">Load more data via Solid Web Components</button>
-    <span class="status" id="status"></span>
-  </p>
-  <p class="status">If the two counts move together when either library loads data, they are the one
-    graph the broker shared.</p>
-</div>
 
 <script type="module">
-  const ci = window.ComponentInterop;
-  const el = (id) => document.getElementById(id);
-  let podosStore = null;
+  // The buttons write `currentPerson`'s foaf:name and photo into the SHARED store
+  // (the rdflib graph PodOS owns and swc adopted). The swc panel mirrors both: a
+  // live data-from-query for the name, and an <img data-from-query> for the photo.
+  const CURRENT = 'urn:solpos:currentPerson';
+  const FOAF_NAME = 'http://xmlns.com/foaf/0.1/name';
+  const PHOTO = 'https://solpos.example/ns#photo';
+  const picks = Array.from(document.querySelectorAll('.person-pick'));
 
-  document.addEventListener('pod-os:loaded', (e) => {
-    try { podosStore = (e && e.detail && e.detail.os && e.detail.os.store && e.detail.os.store.internalStore) || null; } catch (_) {}
-    report();
-  });
-  document.addEventListener('pod-os:resource-loaded', report);
-
-  const swcService = () => { try { return ci && ci.services && ci.services.get('rdf'); } catch (_) { return null; } };
-  function count(store) {
-    if (!store) return null;
-    if (Array.isArray(store.statements)) return store.statements.length;
-    if (typeof store.length === 'number') return store.length;
-    return '?';
-  }
-  function mark(id, ok, text) { const n = el(id); n.textContent = text; n.className = ok ? 'ok' : 'no'; }
-
-  function report() {
-    const svc = swcService();
-    const swcStore = svc && svc.store;
-    mark('swc-present', !!svc, svc ? 'yes' : 'no');
-    mark('podos-present', !!podosStore, podosStore ? 'yes' : 'no');
-    if (swcStore && podosStore) mark('same', swcStore === podosStore, swcStore === podosStore ? '✓ same object' : '✗ different objects');
-    else el('same').textContent = '—';
-    el('swc-count').textContent = count(swcStore) ?? '—';
-    el('podos-count').textContent = count(podosStore) ?? '—';
+  function setCurrent(name, photoUrl) {
+    const rdf = window.ComponentInterop.services.get('rdf');
+    if (!rdf) return;
+    const s = rdf.sym(CURRENT);
+    const replace = (predUri, objNode) => {
+      const pred = rdf.sym(predUri);
+      rdf.store.statementsMatching(s, pred, null).forEach((st) => rdf.store.remove(st));
+      rdf.store.add(s, pred, objNode, s.doc());
+    };
+    replace(FOAF_NAME, rdf.literal(name));
+    replace(PHOTO, rdf.sym(photoUrl));
   }
 
-  // Refresh for a while as PodOS + swc settle over the network.
-  let n = 0; const timer = setInterval(() => { report(); if (++n > 25) clearInterval(timer); }, 1000);
+  picks.forEach((btn) => btn.addEventListener('click', () => {
+    setCurrent(btn.textContent.trim(), btn.value);
+    picks.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+  }));
 
-  el('load-more').addEventListener('click', async () => {
-    const svc = swcService();
-    if (svc && typeof svc.load === 'function') {
-      el('status').textContent = 'loading https://timbl.solidcommunity.net/profile/ via swc…';
-      try { await svc.load('https://timbl.solidcommunity.net/profile/'); } catch (_) {}
-      report();
-      el('status').textContent = 'loaded — the counts above moved together.';
-    } else {
-      el('status').textContent = 'swc rdf service not ready yet.';
-    }
-  });
-  report();
+  // Pre-select the first person once PodOS has handed its store to swc, so the
+  // write lands in the adopted graph (not the pre-adoption one).
+  document.addEventListener('pod-os:loaded',
+    () => setTimeout(() => picks[0] && picks[0].click(), 0), { once: true });
 </script>
 
 <pre id="demo-manifests" hidden>
