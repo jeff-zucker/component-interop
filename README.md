@@ -25,7 +25,7 @@ This zero-dependency, tiny (17kb) library is component-agnostic - any web compon
 
 ### Check out  the [demo](examples/index.html)!
 
-### Visit the [documentation](help/index.html)!
+### Visit the [documentation](help/index.md)!
 
 ### Transparency
 

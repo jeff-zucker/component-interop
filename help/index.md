@@ -81,6 +81,12 @@ Offerings (read these to use the library) — `components`, `attributes`, `objec
 - The **resource** channel keeps one current resource: any library's `emits` sets it; the broker
   applies it to every other library's `accepts`.
 
+> **The dividing rule — exposing a value is data; adopting one is behavior.** A `provides` entry is
+> just the broker reading a value and handing it out, so it lives entirely in the manifest (no code at
+> all if you already fire the event). A `consumes` entry needs the one registered function, because
+> integrating a foreign value into your own runtime is your logic. So a library makes a resource
+> *offerable* with a manifest add, and *adoptable* with one function.
+
 ## Composing multiple libraries
 
 The broker is N-library by design — list more manifests and bundles; it pairs every `consumes` with

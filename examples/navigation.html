@@ -23,7 +23,10 @@
   <style>
     :root { color-scheme: light; font-size: 18px; }
     html, body { background: #ffffff; color: #1a1a1a; }
-    body  { font: 1rem/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    body  { 
+       font: 1rem/1.6 system-ui, sans-serif; margin: 0rem; max-width: 60rem; 
+    }
+
     h1    { font-size: 1.5rem; }
     .intro { background: #eef4ff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; }
@@ -40,13 +43,9 @@
 
 <button type="button" class="view-code-btn">View code</button>
 
-<h1>Shared Navigation — open a resource with one library, both libraries follow</h1>
-
 <div class="intro">
-  `component-interop` loads <strong>Solid Web Components</strong> and <strong>PodOS</strong> and wires
-  their <em>resource</em> channels together — no glue code. <strong>Browse on the left; PodOS on the
-  right follows.</strong> Open a folder in the Solid Web Components browser and PodOS shows that same
-  folder. 
+  Both PodOS and Sol-Components offer pod-container browsing components.  With <code>Component Interop</code>
+  we can navigate in one and have the other follow along.  This can be set up by the component authors and is transparently available in apps.  Try it out - navigate in sol-pod on the left and watch pod-os change on the right.
 </div>
 
 <div class="cols">

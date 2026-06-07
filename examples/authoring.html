@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Authoring for Component Interop</title>
+
+  <!-- Renders component-interop's own manifest-authoring doc (help/index.md).
+       Uses sol-include (a sol-components component) to render the Markdown, so the
+       doc stays single-source in help/index.md. -->
+  <script src="../component-interop.js"
+          data-stage="auto"
+          data-manifest="sol-components.manifest.json"
+          data-components="sol-basic"
+  ></script>
+
+  <style>
+    body { font: 16px/1.6 system-ui, sans-serif; max-width: 52rem;
+           margin: 0 auto; padding: 1.5rem 2rem 3rem; color: #1a1a1a; background: #fff; }
+    h1, h2, h3 { line-height: 1.25; }
+    pre  { background: #f4f5fa; padding: .75rem 1rem; border-radius: 6px; overflow: auto; }
+    code { background: #eef0f7; padding: 0 .25rem; border-radius: 3px; }
+    pre code { background: none; padding: 0; }
+    table { border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: .3rem .6rem; text-align: left; vertical-align: top; }
+    blockquote { border-left: 4px solid #b9ccea; margin: 1rem 0; padding: .25rem 1rem; background: #eef4ff; }
+    a { color: #1a5fb4; }
+  </style>
+</head>
+<body>
+  <sol-include source="../help/index.md" trusted></sol-include>
+</body>
+</html>
