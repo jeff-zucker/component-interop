@@ -140,7 +140,7 @@ test('broker: a consumer is wired to another library\'s provider and invoked wit
     provider: { name: 'provider', objects: { provides: { greeting: { respondTo: 'ev:greet', sendValue: 'detail.text' } } } },
     consumer: { name: 'consumer', objects: { consumes: { greeting: { call: 'setGreeting' } } } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, objects: 'greeting' }, fetchMap });
   await ctx.api.ready;
 
   const got = [];
@@ -161,7 +161,7 @@ test('broker: a null/undefined provided value does not invoke the consumer', req
     provider: { name: 'provider', objects: { provides: { greeting: { respondTo: 'ev:greet', sendValue: 'detail.text' } } } },
     consumer: { name: 'consumer', objects: { consumes: { greeting: { call: 'setGreeting' } } } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, objects: 'greeting' }, fetchMap });
   await ctx.api.ready;
 
   let calls = 0;
@@ -169,6 +169,38 @@ test('broker: a null/undefined provided value does not invoke the consumer', req
   ctx.api.emit('ev:greet', {}); // detail.text is undefined
   await new Promise((r) => setTimeout(r, 5));
   assert.equal(calls, 0);
+});
+
+// ── opt-in gate: nothing cross-wires unless the page lists the key in data-objects ──
+test('opt-in gate: a consumes channel does NOT wire without the data-objects opt-in', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    provider: { name: 'provider', objects: { provides: { greeting: { respondTo: 'ev:greet', sendValue: 'detail.text' } } } },
+    consumer: { name: 'consumer', objects: { consumes: { greeting: { call: 'setGreeting' } } } },
+  });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });   // both manifests loaded, but no data-objects
+  await ctx.api.ready;
+
+  let calls = 0;
+  ctx.api.registerConsumer('setGreeting', () => { calls++; });
+  ctx.api.emit('ev:greet', { text: 'hello' });
+  await new Promise((r) => setTimeout(r, 5));
+  assert.equal(calls, 0, 'the provider fired but the unlisted capability was never wired');
+});
+
+test('opt-in gate: an accepts channel does NOT fire without the data-objects opt-in', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    emitter: { name: 'emitter', objects: { provides: { resource: { respondTo: 'res:change', sendValue: 'detail.uri' } } } },
+    raw:     { name: 'raw',     objects: { accepts:  { resource: { onElement: '#raw', applyValueTo: 'resource' } } } },
+  });
+  const ctx = loadCI({
+    dataset: { manifest }, fetchMap,   // 'resource' not opted in
+    domSetup: (doc) => { doc.body.innerHTML = '<div id="raw"></div>'; },
+  });
+  await ctx.api.ready;
+  ctx.api.emit('res:change', { uri: 'http://pod/a' });
+  await new Promise((r) => setTimeout(r, 5));
+  assert.equal(ctx.document.querySelector('#raw').getAttribute('resource'), null,
+    'no opt-in → the accept target is left untouched');
 });
 
 // ── data-objects: eager-load a consumed object's module, before data-components ───
@@ -188,15 +220,28 @@ test('data-objects loads a consumed object\'s `module`, before data-components',
   assert.ok(ctx.api.has('store'), 'the object key is marked as a live capability');
 });
 
-test('data-objects with no declared `module` warns and does not throw', requireJsdom(), async () => {
+test('data-objects with a declared but module-less key loads nothing and does NOT warn (wire-only)', requireJsdom(), async () => {
   const { fetchMap, manifest } = manifests({
     consumer: { name: 'consumer', objects: { consumes: { store: { call: 'useStore' } } } },
   });
   const ctx = loadCI({ dataset: { manifest, objects: 'store' }, fetchMap });
   await ctx.api.ready;
 
-  assert.deepEqual(ctx.importedSpecs, [], 'nothing imported when no module is declared');
-  assert.ok(ctx.logs.warn.some((w) => w.includes('data-objects "store"')), 'warns about the missing module');
+  assert.deepEqual(ctx.importedSpecs, [], 'nothing imported when the key declares no module');
+  assert.ok(!ctx.logs.warn.some((w) => w.includes('data-objects "store"')),
+    'a declared key (e.g. an accepts/handler channel) is a legitimate wire-only opt-in, not a warning');
+});
+
+test('data-objects with an UNKNOWN key (declared by no manifest) warns', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    consumer: { name: 'consumer', objects: { consumes: { store: { call: 'useStore' } } } },
+  });
+  const ctx = loadCI({ dataset: { manifest, objects: 'bogus' }, fetchMap });
+  await ctx.api.ready;
+
+  assert.deepEqual(ctx.importedSpecs, [], 'nothing imported for an unknown key');
+  assert.ok(ctx.logs.warn.some((w) => w.includes('data-objects "bogus"') && w.includes('unknown')),
+    'warns that the opted-in key matches no declaration (likely a typo)');
 });
 
 // ── pickProvider: choosing among several providers of the same capability ─────────
@@ -222,7 +267,7 @@ test('pickProvider: highest priority wins when there is no preference', requireJ
     ...providerPair({ aPriority: 1, bPriority: 5 }),
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take' } } } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, objects: 'thing' }, fetchMap });
   await ctx.api.ready;
   const { got, from } = await wireAndDetect(ctx, 'ev:b'); // libB has the higher priority
   assert.equal(from, 'libB');
@@ -234,7 +279,7 @@ test('pickProvider: the lower-priority (non-chosen) provider is NOT wired', requ
     ...providerPair({ aPriority: 1, bPriority: 5 }),
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take' } } } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, objects: 'thing' }, fetchMap });
   await ctx.api.ready;
   let calls = 0;
   ctx.api.registerConsumer('take', () => { calls++; });
@@ -248,7 +293,7 @@ test('pickProvider: consumer "from" overrides priority', requireJsdom(), async (
     ...providerPair({ aPriority: 5, bPriority: 1 }),
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take', from: 'libB' } } } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, objects: 'thing' }, fetchMap });
   await ctx.api.ready;
   const { from } = await wireAndDetect(ctx, 'ev:b');
   assert.equal(from, 'libB', 'explicit "from" beats libA\'s higher priority');
@@ -260,7 +305,7 @@ test('pickProvider: data-prefer overrides everything', requireJsdom(), async () 
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take', from: 'libB' } } } },
   });
   const ctx = loadCI({
-    dataset: { manifest, prefer: JSON.stringify({ thing: 'libA' }) },
+    dataset: { manifest, objects: 'thing', prefer: JSON.stringify({ thing: 'libA' }) },
     fetchMap,
   });
   await ctx.api.ready;
@@ -273,7 +318,7 @@ test('pickProvider: equal priority falls back to manifest order (earliest wins)'
     ...providerPair({ aPriority: 0, bPriority: 0 }),
     consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take' } } } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, objects: 'thing' }, fetchMap });
   await ctx.api.ready;
   const { from } = await wireAndDetect(ctx, 'ev:a'); // libA declared first
   assert.equal(from, 'libA');
@@ -288,7 +333,7 @@ test('broker: a library never consumes its OWN provide', requireJsdom(), async (
       consumes: { thing: { call: 'take' } },
     } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, objects: 'thing' }, fetchMap });
   await ctx.api.ready;
   let calls = 0;
   ctx.api.registerConsumer('take', () => { calls++; });
@@ -309,7 +354,7 @@ test('accepts: a provided value is written onto another lib\'s accept target, no
     } },
   });
   const ctx = loadCI({
-    dataset: { manifest },
+    dataset: { manifest, objects: 'resource' },
     fetchMap,
     domSetup: (doc) => {
       doc.body.innerHTML = '<div id="target"></div><div id="self"></div>';
@@ -325,12 +370,12 @@ test('accepts: a provided value is written onto another lib\'s accept target, no
 });
 
 // ── load() + auto-load + bundles ──────────────────────────────────────────────────
-test('auto-load: an attribute on the page imports its module(s) and marks it', requireJsdom(), async () => {
+test('auto-load: an attribute named in data-attributes AND present imports its module(s) and marks it', requireJsdom(), async () => {
   const { fetchMap, manifest } = manifests({
     lib: { name: 'lib', attributes: { 'data-handler': '@x/handler' } },
   });
   const ctx = loadCI({
-    dataset: { manifest },
+    dataset: { manifest, attributes: 'data-handler' },
     fetchMap,
     domSetup: (doc) => { doc.body.innerHTML = '<button data-handler="x">go</button>'; },
   });
@@ -345,14 +390,28 @@ test('auto-load: an attribute on the page imports its module(s) and marks it', r
   assert.ok(ctx.api.loaded.includes('@x/handler'));
 });
 
-test('auto-load: an attribute NOT on the page loads nothing', requireJsdom(), async () => {
+test('auto-load: an attribute named in data-attributes but NOT present loads nothing', requireJsdom(), async () => {
   const { fetchMap, manifest } = manifests({
     lib: { name: 'lib', attributes: { 'data-handler': '@x/handler' } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });   // no [data-handler] on page
+  const ctx = loadCI({ dataset: { manifest, attributes: 'data-handler' }, fetchMap });   // named, but no [data-handler] on page
   await ctx.api.ready;
   await new Promise((r) => setTimeout(r, 10));
-  assert.deepEqual(ctx.importedSpecs, [], 'nothing imported when the attribute is absent');
+  assert.deepEqual(ctx.importedSpecs, [], 'nothing imported when the named attribute is absent');
+});
+
+test('opt-in gate: an attribute present but NOT named in data-attributes loads nothing', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    lib: { name: 'lib', attributes: { 'data-handler': '@x/handler' } },
+  });
+  const ctx = loadCI({
+    dataset: { manifest },   // data-handler is used below but never opted in
+    fetchMap,
+    domSetup: (doc) => { doc.body.innerHTML = '<button data-handler="x">go</button>'; },
+  });
+  await ctx.api.ready;
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(ctx.importedSpecs, [], 'present on the page but not named in data-attributes → not loaded');
 });
 
 test('load: data-components are imported in order', requireJsdom(), async () => {
@@ -407,7 +466,7 @@ test('broker: a provider can deliver its value over a SERVICE channel', requireJ
     provider: { name: 'provider', objects: { provides: { store: { service: 'rdf', sendValue: 'value' } } } },
     consumer: { name: 'consumer', objects: { consumes: { store: { call: 'useStore' } } } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, objects: 'store' }, fetchMap });
   await ctx.api.ready;
 
   const got = [];
@@ -422,7 +481,7 @@ test('broker: a provided value with no registered consumer warns', requireJsdom(
     provider: { name: 'provider', objects: { provides: { greeting: { respondTo: 'ev:greet', sendValue: 'detail.text' } } } },
     consumer: { name: 'consumer', objects: { consumes: { greeting: { call: 'missingConsumer' } } } },
   });
-  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, objects: 'greeting' }, fetchMap });
   await ctx.api.ready;
   ctx.api.emit('ev:greet', { text: 'hi' }); // 'missingConsumer' was never registered
   await new Promise((r) => setTimeout(r, 5));
@@ -438,7 +497,7 @@ test('accepts: with no transform the raw provided value is written (hash kept)',
     raw:     { name: 'raw',     objects: { accepts:  { resource: { onElement: '#raw', applyValueTo: 'resource' } } } },
   });
   const ctx = loadCI({
-    dataset: { manifest }, fetchMap,
+    dataset: { manifest, objects: 'resource' }, fetchMap,
     domSetup: (doc) => { doc.body.innerHTML = '<div id="raw"></div>'; },
   });
   await ctx.api.ready;

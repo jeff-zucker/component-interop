@@ -14,11 +14,17 @@
  * On load it (1) reads the `data-manifest` URLs; (2) injects an
  * importmap built from the manifests' `components` (stage chosen by `data-stage`);
  * (3) `import()`s the `data-components` modules (or all, with `data-components="*"`);
- * (4) brokers the libraries' `objects` blocks; (5) at DOM-ready, auto-loads any
- * `attributes` entry whose `data-*` is present; then fires `interop:ready`.
+ * (4) brokers the libraries' `objects` blocks; (5) at DOM-ready, loads any
+ * `attributes` entry the page both names in `data-attributes` and uses in the DOM;
+ * then fires `interop:ready`.
+ *
+ * The opt-in invariant: nothing ci activates that the script tag doesn't name —
+ * components in `data-components`, shared objects in `data-objects`, attributes in
+ * `data-attributes`. (Transitive deps — `shared-modules`, a bundle's internals —
+ * still load on demand; those are plumbing, not offerings.)
  *
  * A manifest's OFFERINGS (read these to use the library): `components` (elements to
- * place), `attributes` (data-* you can use, auto-loaded when present), `objects`
+ * place), `attributes` (data-* you can use, loaded when named + present), `objects`
  * (values shared with other libraries). Its PLUMBING: `shared-modules` (deps it
  * externalizes by name, so peers dedupe — the dep-sharing contract) and `bundles`
  * (logical, NOT physical, module groups an attribute can point at).
@@ -36,7 +42,9 @@
  * Relative import URLs resolve against THAT manifest's URL. The earlier manifest
  * wins a conflicting specifier (so a shared dep stays single). The broker pairs a
  * `consumes` OR `accepts` key with ANOTHER library's `provides` key of the same
- * name (the adopt rule) — so a page mixing libraries needs no bridge script.
+ * name (the adopt rule) — but ONLY for keys the page lists in `data-objects`, so
+ * nothing cross-wires until the page names it. A page mixing libraries needs no
+ * bridge script, just the opt-in; the tag is the full inventory of what links.
  *
  * A `consumes.call` names a handler the consuming library registered via
  * `ComponentInterop.registerConsumer(name, fn)` — the broker invokes the
@@ -44,8 +52,12 @@
  * of any library's actual API.
  *
  * data-* attributes: data-components (specifiers, or `*` for all), data-objects
- * (object-capability keys to consume — eager-loads each key's `module` before
- * data-components, so a consumer is registered before any provider fires),
+ * (the object-capability keys this page opts into — the broker wires a `consumes`
+ * or `accepts` channel ONLY if its key is listed here; a key whose declaration
+ * carries a `module` is also eager-loaded before data-components, so its consumer
+ * is registered before any provider fires), data-attributes (the manifest `data-*`
+ * keys this page opts into — each loads only when named here AND present in the DOM;
+ * no list → no attribute loads),
  * data-stage (`local`|`cdn`|`auto` — auto picks local on localhost/file:, cdn
  * elsewhere), data-manifest (SAME-ORIGIN URLs to merge), data-importmap-extra
  * (inline importmap JSON), data-base (resolve data-manifest paths), data-prefer
@@ -227,12 +239,16 @@
     // objects: per-library shared-value declarations (keyed by library name).
     if (m.objects && m.name) {
       interopSources.push({ name: m.name, interop: m.objects });
-      // An object declaration may name the `module` that registers its code
-      // (e.g. a `consumes.call` handler). `data-objects="key"` eager-loads it.
+      // Track every declared key (so data-objects can tell an opt-in from a typo),
+      // and record the `module` a declaration names (e.g. a `consumes.call` handler)
+      // so `data-objects="key"` can eager-load it.
       ['provides', 'consumes', 'accepts'].forEach(function (g) {
         var blk = m.objects[g]; if (!blk) return;
-        for (var key in blk) if (own(blk, key) && blk[key] && blk[key].module)
-          objectModules[key] = addSpecs((objectModules[key] || []), blk[key].module, url);
+        for (var key in blk) if (own(blk, key) && blk[key]) {
+          knownObjectKeys[key] = true;
+          if (blk[key].module)
+            objectModules[key] = addSpecs((objectModules[key] || []), blk[key].module, url);
+        }
       });
     }
   }
@@ -270,6 +286,7 @@
   var interopSources = [];   // [{ name, interop }] collected from manifests
   api.interop = interopSources;
   var objectModules = {};    // object key → module specifier(s) (for data-objects)
+  var knownObjectKeys = {};  // every object key any manifest declares (provides/consumes/accepts)
 
   function getByPath(obj, path) {
     if (!path) return obj;
@@ -323,6 +340,12 @@
     var libs = interopSources.filter(function (s) { return s && s.interop; });
     if (!libs.length) return;
 
+    // Opt-in gate: the page wires a `consumes`/`accepts` capability only if its
+    // key is listed in data-objects. No list → nothing cross-wires, even when two
+    // manifests both declare the channel. The tag is the inventory of what links.
+    var allow = {};
+    toList(ds.objects).forEach(function (k) { allow[k] = true; });
+
     // Providers of `cap` declared by some OTHER library (manifest order preserved).
     function providersOf(cap, exceptName) {
       var out = [];
@@ -339,6 +362,7 @@
     libs.forEach(function (cLib) {
       var consumes = cLib.interop.consumes || {};
       Object.keys(consumes).forEach(function (cap) {
+        if (!allow[cap]) return;
         var consumer = consumes[cap];
         var chosen = pickProvider(providersOf(cap, cLib.name), cap, consumer);
         if (!chosen) return;
@@ -350,6 +374,7 @@
 
       var accepts = cLib.interop.accepts || {};
       Object.keys(accepts).forEach(function (cap) {
+        if (!allow[cap]) return;
         var a = accepts[cap];
         var chosen = pickProvider(providersOf(cap, cLib.name), cap, a);
         if (!chosen) return;
@@ -410,7 +435,8 @@
     var specs = [];
     list.forEach(function (k) {
       if (objectModules[k]) addSpecs(specs, objectModules[k], '');
-      else console.warn('[component-interop] data-objects "' + k + '": no `module` declared in any manifest objects block');
+      else if (!knownObjectKeys[k]) console.warn('[component-interop] data-objects "' + k + '": unknown capability — not declared in any manifest objects block');
+      // else: declared but module-less (a wire-only channel, e.g. `accepts`) — nothing to eager-load
     });
     return importSeq(expandAll(specs)).then(function () {
       list.forEach(function (k) { if (objectModules[k]) markCapability(k); });
@@ -425,18 +451,23 @@
     window.dispatchEvent(new CustomEvent('interop:ready', { detail: detail }));
   }
 
-  // Auto-load attributes: when a manifest-declared `data-*` attribute appears on
-  // the page, import the module(s) that power it. A key may be a space-separated
-  // set of attributes that share modules. Runs after the DOM is parsed.
+  // Auto-load attributes: opt-in by name (data-attributes), then by presence. A
+  // manifest-declared `data-*` loads its module(s) only when the page BOTH lists
+  // the attribute in data-attributes AND uses it in the DOM — so nothing ci
+  // activates that the script tag doesn't name. No list → nothing loads. A key may
+  // be a space-separated set sharing modules. Runs after the DOM is parsed.
   function autoLoadAttributes() {
     if (typeof document === 'undefined') return;
+    var allow = {};
+    toList(ds.attributes).forEach(function (a) { allow[a] = true; });
     var sets = MANIFEST.attributes || {};
     Object.keys(sets).forEach(function (key) {
       if (api._caps[key]) return;
-      var present = key.split(/\s+/).filter(Boolean).some(function (attr) {
+      var on = key.split(/\s+/).filter(Boolean).some(function (attr) {
+        if (!allow[attr]) return false;
         try { return !!document.querySelector('[' + attr + ']'); } catch (e) { return false; }
       });
-      if (!present) return;
+      if (!on) return;
       importSeq(expandAll(sets[key])).then(function () { markCapability(key); });
     });
   }

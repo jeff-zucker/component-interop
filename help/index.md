@@ -8,8 +8,14 @@ independently-authored component libraries share a store, a session, and capabil
 coordinate navigation — **without importing each other and without page glue code.**
 
 Each library ships (or is described by) a small JSON **manifest** declaring what it *provides* and
-*consumes*. One `<script>` tag loads the libraries and the broker pairs every consumer with a
-provider in another library. The result is plain custom elements on a page that interoperate.
+*consumes*. One `<script>` tag names everything the page draws from those libraries — components
+(`data-components`), shared objects (`data-objects`), and attributes (`data-attributes`) — and the
+broker pairs each opted-in consumer with a provider in another library. The result is plain custom
+elements that interoperate.
+
+**The opt-in invariant:** nothing ci activates that the script tag doesn't name. Load as many
+manifests as you like; until the page names a capability, it stays dormant — so the tag is the
+complete inventory of what the page uses and what cross-wires.
 
 ## Install / use
 
@@ -31,10 +37,13 @@ library→library):
 
 1. **components** — injects an importmap from the manifests' `components` +
    `shared-modules`, then `import()`s the `data-components` (or `"*"` for all).
-2. **attributes** — when a manifest-declared `data-*` appears on the page, ci **auto-loads**
-   the module(s) (or `bundle`) that power it. Nothing to declare on the page.
+2. **attributes** — a manifest-declared `data-*` loads its module(s) (or `bundle`) when the page
+   **both** names it in `data-attributes` **and** uses it in the DOM. Named-but-unused loads
+   nothing; used-but-unnamed loads nothing.
 3. **objects** — pairs a library's `consumes`/`accepts` with another library's
-   `provides` of the same key (the "adopt the other library's value" rule).
+   `provides` of the same key (the "adopt the other library's value" rule), but only for keys the
+   page opts into with `data-objects="key …"`. No opt-in → no cross-wiring, even when both
+   manifests declare the channel.
 4. **a shared registry** — `ComponentInterop.services` (register / whenReady / get / has)
    so libraries publish and discover shared objects without importing each other.
 
@@ -53,7 +62,7 @@ Offerings (read these to use the library) — `components`, `attributes`, `objec
     "local": { "components": {…}, "shared-modules": { "dep": "./vendor/dep.js" } },
     "cdn":   { "components": {…}, "shared-modules": { "dep": "https://esm.sh/dep" } }
   },
-  "attributes": {                                     // a data-* → its module(s) or a bundle name (auto-loaded)
+  "attributes": {                                     // a data-* → its module(s) or a bundle name (page opts in via data-attributes)
     "data-login": "./my-login.js",
     "data-edit-shape data-subject": "editing"         // space-separated keys share modules
   },
@@ -79,7 +88,7 @@ Offerings (read these to use the library) — `components`, `attributes`, `objec
   The broker invokes the registered function — never an arbitrary string — so it stays ignorant of
   any library's actual API. An optional `from: "<lib>"` names a preferred provider.
 - The **resource** channel keeps one current resource: any library's `emits` sets it; the broker
-  applies it to every other library's `accepts`.
+  applies it to every other library's `accepts` — for keys the page opted into via `data-objects`.
 
 > **The dividing rule — exposing a value is data; adopting one is behavior.** A `provides` entry is
 > just the broker reading a value and handing it out, so it lives entirely in the manifest (no code at
@@ -89,14 +98,16 @@ Offerings (read these to use the library) — `components`, `attributes`, `objec
 
 ## Composing multiple libraries
 
-The broker is N-library by design — list more manifests and bundles; it pairs every `consumes` with
-a provider in **any** other library, and the `resource` channel + shared `services` registry are
-page-wide, so all of them share one store/session/current-resource with no per-pair glue:
+The broker is N-library by design — list more manifests and bundles; it pairs every opted-in
+`consumes` (the keys named in `data-objects`) with a provider in **any** other library, and the
+`resource` channel + shared `services` registry are page-wide, so all of them share one
+store/session/current-resource with no per-pair glue:
 
 ```html
 <script src="component-interop.js"
         data-manifest="lib-a.manifest.json lib-b.manifest.json lib-c.manifest.json"
         data-components="lib-a lib-b lib-c"
+        data-objects="rdf navigation"
         data-prefer='{"rdf":"lib-b"}'></script>
 ```
 
@@ -124,6 +135,8 @@ Conventions that make N libraries coherent:
 ## `data-*` attributes (`data-base`, `data-stage`, …)
 
 - `data-components` — components/bundles to `import()` (or `*` for every component)
+- `data-objects` — object-capability keys to opt into (wires `consumes`/`accepts`; also eager-loads a key's `module`)
+- `data-attributes` — manifest `data-*` keys to opt into (a key loads only when named here **and** present in the DOM)
 - `data-stage` — `local` (default) | `cdn` — picks `stages.<stage>` (`components` + `shared-modules`)
 - `data-manifest` — extra **same-origin** manifest URLs (merged after the default; resolved against
   the page)
@@ -132,7 +145,7 @@ Conventions that make N libraries coherent:
 - `data-base` — base URL for resolving `data-manifest` paths
 - `data-prefer` — JSON map `key → preferred provider library`, for multi-library pages
 
-(There is no `data-extend-with` — attributes auto-load when their `data-*` appears on the page.)
+(There is no `data-extend-with` — an attribute loads when it is named in `data-attributes` and used on the page.)
 
 ## API (`window.ComponentInterop`)
 

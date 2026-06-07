@@ -1,11 +1,60 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
   <title>Intro</title>
+
+  <style>
+    :root { color-scheme: light; font-size: 18px; }
+    html, body { background: #eef4ff; color: #1a1a1a; }
+    body  { font: 1rem/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    h1    { font-size: 1.5rem; }
+    .intro { background: #fff; border: 1px solid #b9ccea; border-radius: 8px;
+             padding: 1rem 1.25rem; color: #1a1a1a; margin-bottom: 1rem; }
+    code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
+    pre { background: #f6f8fa; border: 1px solid #d7dde5; border-radius: 6px;
+          padding: .85rem 1rem; overflow: auto; margin: 0 0 1rem;
+          font: .95rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    pre code { background: none; padding: 0; }
+  </style>
 </head>
 <body>
-  <!-- Intro — content to come. -->
+
+<div class="intro">
+<p><b>Component Interop</b> provides support for interoperable web-components. It is a lightweight brokering system that allows apps to mix and match component libraries from differnet authors. It supports tree-shaking which means an app can use a library's attributes and objects without loading all of the library's components or full code.
+
+<p>This demo uses examples from Angelo's <a href="https://github.com/pod-os/PodOS/tree/main/elements">PodOS Element components</a> and Jeff's <a href="https://github.com/jeff-zucker/sol-components">Sol Components</a>, both of which are based on Solid and the rdflib store. <b>Component Interop</b> itself can work with any protocol and any store.</p>
+<p>
+The last tab in the demo talks about how a component author can make resources available. The other tabs show how resources can be deployed and shared in apps.
+</p>
+For details, see the <a href="https://github.com/component-interop">Component Interop Repository</a>.
+
+<script src="../component-interop.js"
+  data-manifest="sol-components.manifest.json"
+  data-objects="store"
+  data-attributes="data-from-query"
+></script>
+
+<ul data-from-query pattern="?s foaf:name ?name"></ul>
+
+<script type="module">
+  const rdf = await ComponentInterop.services.whenReady('rdf');
+  rdf.store.add(rdf.sym('urn:x'), rdf.sym('http://xmlns.com/foaf/0.1/name'), rdf.literal('Ada'));
+</script>
+<xmp><script src="../component-interop.js"
+  data-manifest="sol-components.manifest.json"
+  data-objects="store"
+  data-attributes="data-from-query"
+></script>
+
+<ul data-from-query pattern="?s foaf:name ?name"></ul>
+
+<script type="module">
+  const rdf = await ComponentInterop.services.whenReady('rdf');
+  rdf.store.add(rdf.sym('urn:x'), rdf.sym('http://xmlns.com/foaf/0.1/name'), rdf.literal('Ada'));
+</script>
+</xmp>
 </body>
 </html>

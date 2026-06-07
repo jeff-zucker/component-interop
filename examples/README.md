@@ -9,11 +9,12 @@ A manifest's **offerings** — what you read to *use* a library:
 
 - **components** — elements you place (a name → a URL). A page loads them with
   `data-components="…"` (or `"*"` for all of them).
-- **attributes** — a `data-*` you use; ci **auto-loads** its module(s) the moment the
-  attribute appears on the page. Nothing to declare on the page.
+- **attributes** — a `data-*` you use; ci loads its module(s) when the page **names it in
+  `data-attributes`** and **uses it** in the DOM. Either alone loads nothing.
 - **objects** — a value one library shares: it `provides` the value, and another
   `consumes` it (calls a handler) or `accepts` it (sets a DOM attribute). Matched by
-  key, so **neither library imports the other**.
+  key, so **neither library imports the other** — and the page opts in per key with
+  `data-objects="…"`, so nothing cross-wires unless the page names it.
 
 Its **plumbing** — only a co-author wiring shared deps reads these:
 
@@ -33,27 +34,30 @@ Its **plumbing** — only a co-author wiring shared deps reads these:
 }
 ```
 
-From the page author's seat there's really one move — **load the libraries** (and use
-their `data-*`); the rest is the libraries' manifests declaring what they share.
+From the page author's seat the script tag names everything the page draws from the libraries —
+components (`data-components`), attributes (`data-attributes`), and shared objects (`data-objects`);
+the rest is the libraries' manifests declaring what they offer. **Nothing ci activates that the tag
+doesn't name**, so the tag is a full inventory of what loads and what cross-wires.
 
 ## The tabs
 
 `index.html` is a tabbed shell (its tab bar is itself component-interop's `data-handler`
-attribute, auto-loaded). Each tab is one focused demo in an iframe; every page's top-right
+attribute, opted into with `data-attributes="data-handler"`). Each tab is one focused demo in an
+iframe; every page's top-right
 **"View code"** opens a full-page panel showing that page **plus the manifest slice** that
 wires it. Each demo is some mix of the offerings:
 
 | tab | what loads | objects (share a value) |
 |-----|-----------|---------------|
-| **Shared Navigation** | `sol-pod` + PodOS elements | the current resource URL — swc `provides` `navigation` (`sol-navigate`) → PodOS `accepts` it (`pos-resource@uri`) |
+| **Shared Navigation** | `data-objects="navigation"` + `sol-pod` + PodOS | the current resource URL — swc `provides` `navigation` (`sol-navigate`) → PodOS `accepts` it (`pos-resource@uri`) |
 | **Shared Store** | `data-objects="store"` + PodOS | the RDF store — PodOS `provides` `store` (`internalStore`) → swc `consumes` it (`rdf.useStore`); swc's `.store` **is** PodOS's, same object. swc then reads it live with `data-from-query` |
-| **Auto-generated Forms** | `data-edit-*` (auto-loads `rdf-bundle`) | — (a plain `<div>` + `data-edit-shape` becomes a shape-driven editor) |
-| **Shared SPARQL / live store** | `data-from-query` (auto-loads) | — (`data-from-query` on a plain `<ul>`: SPARQL with an `endpoint`, or a no-`endpoint` triple `pattern` that reads the shared store **live**) |
-| **Shared Auth** | swc's `<sol-login>` (a component) | the authenticated `fetch` (the sign-in session) |
+| **Auto-generated Forms** | `data-attributes="data-edit-shape"` (loads `rdf-bundle`) | — (a plain `<div>` + `data-edit-shape` becomes a shape-driven editor) |
+| **Shared SPARQL / live store** | `data-attributes="data-from-query"` | — (`data-from-query` on a plain `<ul>`: SPARQL with an `endpoint`, or a no-`endpoint` triple `pattern` that reads the shared store **live**) |
+| **Shared Auth** | `data-objects="auth"` + swc's `<sol-login>` | the authenticated `fetch` (the sign-in session) |
 
-So **Forms** and **SPARQL** are pure *attributes* — a PodOS page simply gains a swc
-behaviour by using the `data-*`, and ci auto-loads the code. **Navigation**, **Store**,
-and **Auth** also share an *object*.
+So **Forms** and **SPARQL** are pure *attributes* — a PodOS page gains a swc behaviour by naming
+the `data-*` in `data-attributes` and using it, and ci loads the code. **Navigation**, **Store**,
+and **Auth** also share an *object*, so each names its key in `data-objects` to opt in.
 
 ## Run them
 
