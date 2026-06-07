@@ -107,8 +107,7 @@ store/session/current-resource with no per-pair glue:
 <script src="component-interop.js"
         data-manifest="lib-a.manifest.json lib-b.manifest.json lib-c.manifest.json"
         data-components="lib-a lib-b lib-c"
-        data-objects="rdf navigation"
-        data-prefer='{"rdf":"lib-b"}'></script>
+        data-objects="rdf:lib-b navigation"></script>   <!-- rdf hosted by lib-b; navigation: no preference -->
 ```
 
 Conventions that make N libraries coherent:
@@ -122,8 +121,10 @@ Conventions that make N libraries coherent:
    **descriptor manifest** mapping a library's terms to the shared ones (see `examples/solpos/`,
    which describes PodOS in ~14 lines).
 3. **Choose among multiple providers** when two libraries provide the same capability. The broker
-   picks one in this order: **`data-prefer`** (a JSON map `capability → library`, the page/app's
-   call) → the consumer's **`from`** → highest provider **`priority`** → earliest in manifest order.
+   picks one in this order: the page's preference (**`data-prefer`**, a JSON map `capability →
+   library`, or the **`key:provider`** inline host in `data-objects` like `store:pod-os` — an
+   explicit `data-prefer` wins if both name a key) → the consumer's **`from`** → highest provider
+   **`priority`** → earliest in manifest order.
    See `examples/multi-provider/`.
 4. **Namespace global names.** `registerConsumer` handler names are
    page-global — prefix them (`libA.adoptStore`) so two libraries don't collide.
@@ -135,7 +136,7 @@ Conventions that make N libraries coherent:
 ## `data-*` attributes (`data-base`, `data-stage`, …)
 
 - `data-components` — components/bundles to `import()` (or `*` for every component)
-- `data-objects` — object-capability keys to opt into (wires `consumes`/`accepts`; also eager-loads a key's `module`)
+- `data-objects` — object-capability keys to opt into (wires `consumes`/`accepts`; also eager-loads a key's `module`). A token may name its host inline — `key:provider`, e.g. `store:pod-os` — which also sets the provider preference
 - `data-attributes` — manifest `data-*` keys to opt into (a key loads only when named here **and** present in the DOM)
 - `data-stage` — `local` (default) | `cdn` — picks `stages.<stage>` (`components` + `shared-modules`)
 - `data-manifest` — extra **same-origin** manifest URLs (merged after the default; resolved against
@@ -143,7 +144,7 @@ Conventions that make N libraries coherent:
 - `data-manifest-default="off"` — skip the default sibling `<basename>.manifest.json`
 - `data-importmap-extra` — inline importmap JSON (manifest entries win on conflict)
 - `data-base` — base URL for resolving `data-manifest` paths
-- `data-prefer` — JSON map `key → preferred provider library`, for multi-library pages
+- `data-prefer` — JSON map `key → preferred provider library`, for multi-library pages (wins over a `key:provider` inline host in `data-objects`)
 
 (There is no `data-extend-with` — an attribute loads when it is named in `data-attributes` and used on the page.)
 

@@ -50,7 +50,7 @@ wires it. Each demo is some mix of the offerings:
 | tab | what loads | objects (share a value) |
 |-----|-----------|---------------|
 | **Shared Navigation** | `data-objects="navigation"` + `sol-pod` + PodOS | the current resource URL — swc `provides` `navigation` (`sol-navigate`) → PodOS `accepts` it (`pos-resource@uri`) |
-| **Shared Store** | `data-objects="store"` + PodOS | the RDF store — PodOS `provides` `store` (`internalStore`) → swc `consumes` it (`rdf.useStore`); swc's `.store` **is** PodOS's, same object. swc then reads it live with `data-from-query` |
+| **Shared Store** | `data-objects="store:pod-os"` + PodOS | the RDF store — PodOS `provides` `store` (`internalStore`) → swc `consumes` it (`rdf.useStore`); the `:pod-os` host names PodOS as the shared store. swc's `.store` **is** PodOS's, same object, read live with `data-from-query` |
 | **Auto-generated Forms** | `data-attributes="data-edit-shape"` (loads `rdf-bundle`) | — (a plain `<div>` + `data-edit-shape` becomes a shape-driven editor) |
 | **Shared SPARQL / live store** | `data-attributes="data-from-query"` | — (`data-from-query` on a plain `<ul>`: SPARQL with an `endpoint`, or a no-`endpoint` triple `pattern` that reads the shared store **live**) |
 | **Shared Auth** | `data-objects="auth"` + swc's `<sol-login>` | the authenticated `fetch` (the sign-in session) |

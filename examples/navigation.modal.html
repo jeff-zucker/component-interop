@@ -3,21 +3,20 @@ h2  { margin-bottom: 0; }
 xmp { margin-top: 0; }
 </style>
 
-<xmp><!-- <b>USE COMPONENT-INTEROP TO LOAD TWO SETS OF COMPONENTS</b>
--->
-<script src="../component-interop.js"
+<b>1. Import the "navigation" object, one component from Sol-Components and all PodOS components</b>
+<pre><code>&lt;script src="../component-interop.js"
         data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
-        data-components="sol-pod @pod-os/elements"
-        data-objects="navigation"
-></script>
+        <b>data-components="sol-pod @pod-os/elements"</b>
+        <b>data-objects="navigation"</b>
+>&lt;/script></code></pre>
 
-<!-- PUT THE GUEST COMPONENT'S HTML IN THE PAGE
--->
-<sol-pod source="https://timbl.solidcommunity.net/public/"></sol-pod>
 
-<!-- PodOS follows the same current resource — the broker wires sol-pod's navigation onto pos-resource -->
-<pos-app>
+<b>2. Put a navigation component from Sol-Components on the page</b>
+<xmp><sol-pod source="https://timbl.solidcommunity.net/public/"></sol-pod></xmp>
+
+<b>3. Put a navigation component from PodOS on the page, you're done, all the work was in the script call above.</b>
+<xmp><pos-app>
   <pos-resource uri="https://timbl.solidcommunity.net/public/">
     <pos-container-contents></pos-container-contents>
   </pos-resource>

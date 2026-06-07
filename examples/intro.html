@@ -31,30 +31,5 @@ The last tab in the demo talks about how a component author can make resources a
 </p>
 For details, see the <a href="https://github.com/component-interop">Component Interop Repository</a>.
 
-<script src="../component-interop.js"
-  data-manifest="sol-components.manifest.json"
-  data-objects="store"
-  data-attributes="data-from-query"
-></script>
-
-<ul data-from-query pattern="?s foaf:name ?name"></ul>
-
-<script type="module">
-  const rdf = await ComponentInterop.services.whenReady('rdf');
-  rdf.store.add(rdf.sym('urn:x'), rdf.sym('http://xmlns.com/foaf/0.1/name'), rdf.literal('Ada'));
-</script>
-<xmp><script src="../component-interop.js"
-  data-manifest="sol-components.manifest.json"
-  data-objects="store"
-  data-attributes="data-from-query"
-></script>
-
-<ul data-from-query pattern="?s foaf:name ?name"></ul>
-
-<script type="module">
-  const rdf = await ComponentInterop.services.whenReady('rdf');
-  rdf.store.add(rdf.sym('urn:x'), rdf.sym('http://xmlns.com/foaf/0.1/name'), rdf.literal('Ada'));
-</script>
-</xmp>
 </body>
 </html>

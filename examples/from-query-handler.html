@@ -23,7 +23,7 @@
 <h1>Handling <code>data-from-query</code> results in your own element</h1>
 
 <div class="intro">
-<p><code>data-from-query</code> runs a SPARQL query (or a triple <code>pattern</code>) and hands the results to the element it sits on. On a <code>&lt;ul&gt;</code> or <code>&lt;select&gt;</code> it fills the rows in for you; on an <code>&lt;img&gt;</code> it sets the <code>src</code> to the result URI; on any other element — including your own custom element — it just hands you the data so you can render it however you like.</p>
+<p><code>data-from-query</code> runs a SPARQL query (or a triple <code>pattern</code>) and hands the results to the element it sits on. On a <code>&lt;ul&gt;</code> or <code>&lt;select&gt;</code> it fills the rows in for you; on an <code>&lt;img&gt;</code> it sets the <code>src</code> to the result URI; on a plain text element (an <code>&lt;h1&gt;</code>, <code>&lt;span&gt;</code>, …) it sets the element's text to the result; on your own custom element it just hands you the data so you can render it however you like.</p>
 </div>
 
 <h2>1. Put the attribute on your element</h2>

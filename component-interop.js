@@ -55,13 +55,16 @@
  * (the object-capability keys this page opts into — the broker wires a `consumes`
  * or `accepts` channel ONLY if its key is listed here; a key whose declaration
  * carries a `module` is also eager-loaded before data-components, so its consumer
- * is registered before any provider fires), data-attributes (the manifest `data-*`
+ * is registered before any provider fires. A token may name its host inline,
+ * `key:provider` e.g. "store:pod-os", which also sets the provider preference —
+ * one token saying opt-in AND from-whom), data-attributes (the manifest `data-*`
  * keys this page opts into — each loads only when named here AND present in the DOM;
  * no list → no attribute loads),
  * data-stage (`local`|`cdn`|`auto` — auto picks local on localhost/file:, cdn
  * elsewhere), data-manifest (SAME-ORIGIN URLs to merge), data-importmap-extra
  * (inline importmap JSON), data-base (resolve data-manifest paths), data-prefer
- * (JSON map key→preferred provider library, for multi-library pages).
+ * (JSON map key→preferred provider library, for multi-library pages; an explicit
+ * data-prefer wins over a `key:provider` inline host in data-objects).
  *
  * API on window.ComponentInterop: ready (Promise), load(components), manifest,
  * loaded, version, registerCapability("data-x", modules),
@@ -99,6 +102,15 @@
   var PREFER = {};
   try { PREFER = JSON.parse(ds.prefer || '{}') || {}; }
   catch (e) { console.warn('[component-interop] data-prefer is not valid JSON — ignored'); }
+
+  // A data-objects token may name its host inline: `key` or `key:provider`
+  // (e.g. "store:pod-os"). The provider folds into PREFER so one token says both
+  // "opt in" AND "from whom"; an explicit data-prefer (parsed above) wins on conflict.
+  toList(ds.objects).forEach(function (tok) {
+    var i = tok.indexOf(':'); if (i === -1) return;
+    var k = tok.slice(0, i), host = tok.slice(i + 1);
+    if (host && !PREFER[k]) PREFER[k] = host;
+  });
 
   var MANIFEST = { components: {}, attributes: {}, bundles: {} };   // grows as manifests merge in
 
@@ -161,6 +173,9 @@
   function toList(v) {
     return (Array.isArray(v) ? v.slice() : String(v || '').trim().split(/\s+/)).filter(Boolean);
   }
+  // A data-objects token is `key` or `key:provider`; the key alone is the opt-in /
+  // module-load identity (the `:provider` host is handled once, into PREFER, above).
+  function objKey(tok) { var i = tok.indexOf(':'); return i === -1 ? tok : tok.slice(0, i); }
   function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function assign(t, s) { if (s) for (var k in s) if (own(s, k)) t[k] = s[k]; return t; }
   function resolveUrl(v, baseUrl) { try { return new URL(v, baseUrl).href; } catch (e) { return v; } }
@@ -344,7 +359,7 @@
     // key is listed in data-objects. No list → nothing cross-wires, even when two
     // manifests both declare the channel. The tag is the inventory of what links.
     var allow = {};
-    toList(ds.objects).forEach(function (k) { allow[k] = true; });
+    toList(ds.objects).forEach(function (tok) { allow[objKey(tok)] = true; });
 
     // Providers of `cap` declared by some OTHER library (manifest order preserved).
     function providersOf(cap, exceptName) {
@@ -430,7 +445,7 @@
   // before a provider fires its value — so these load before `data-components`.
   function loadObjects(keys) {
     ensureImportmap();
-    var list = toList(keys);
+    var list = toList(keys).map(objKey);   // strip any inline `:provider` host
     if (!list.length) return Promise.resolve();
     var specs = [];
     list.forEach(function (k) {

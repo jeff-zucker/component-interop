@@ -13,14 +13,18 @@
   <!-- component-interop wires the rdf capability: PodOS PROVIDES its RDF store
        (pod-os:loaded → os.store.internalStore); swc CONSUMES it (data-objects="store"
        → rdf.useStore). The broker loads the store consumer before PodOS boots, so
-       swc adopts PodOS's store and both read one graph. The `data-from-query`
-       attribute makes any element a live triple-pattern reader of that graph. -->
+       swc adopts PodOS's store and both read one graph. PodOS is the host because it
+       provides and swc adopts — swc can't host here (PodOS exposes no store-adopt
+       hook). The `store:pod-os` token names PodOS as the host inline (and would
+       arbitrate if 2+ libraries provided the store).
+       The `data-from-query` attribute makes any element a live triple-pattern reader
+       of that graph. -->
   <link rel="view-code" href="store.modal.html">
   <script src="../component-interop.js"
           data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
           data-components="@pod-os/elements"
-          data-objects="store"
+          data-objects="store:pod-os"
           data-attributes="data-from-query"
   ></script>
 
@@ -31,7 +35,7 @@
     h1    { font-size: 1.5rem; }
     .intro { background: #fff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; margin-bottom:1rem; }
-    .panels { display: grid; grid-template-columns: 1fr 2fr; gap: 1.25rem; align-items: start; }
+    .panels { display: grid; grid-template-columns: 2fr 3fr; gap: 1.25rem; align-items: start; }
     @media (max-width: 40rem) { .panels { grid-template-columns: 1fr; } }
     .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; background: #fff; }
     .card h2 { font-size: 1.05rem; margin: 0 0 .75rem; }
@@ -57,12 +61,14 @@
 <p> When two component libraries have compatible stores and each agree to share,
 it becomes possible for either to write to the store so that the other can read from it.
 In the demo the left side (PodOS) writes a triple into the store with each button click. On the right side (Sol-Component), an img tag gets its src from querying the joint store, including what PodOS just put in it.
+<button type="button" class="view-code-btn">View code</button>
 </p>
 </div>
 
 <div class="panels">
   <section class="card" aria-label="PodOS panel">
-    <h2>PodOS holds the shared graph — pick a person</h2>
+    <h2>PodOS writes to the shared store</h2>
+    Each click sets CurrentPerson in the store to the person clicked.
     <pos-app>
       <div class="picker" role="group" aria-label="Choose the current person">
         <button type="button" class="person-pick" aria-pressed="false"
@@ -75,9 +81,8 @@ In the demo the left side (PodOS) writes a triple into the store with each butto
                 value="https://virginiabalseiro.com/assets/images/profile.jpg"
         >Virginia Balseiro</button>
       </div>
+<p>Note: this demo is one way because PodOS doesn't have the ability to use a foreign store. It could with six lines of code if it wanted to.</p>
     </pos-app>
-    <p class="status">Each click writes <code>&lt;currentPerson&gt; foaf:name "…"</code> (and a photo)
-      into PodOS's store.</p>
   </section>
 
   <section class="card" aria-label="Solid Web Components panel">
@@ -89,13 +94,12 @@ In the demo the left side (PodOS) writes a triple into the store with each butto
         pattern="<urn:solpos:currentPerson> foaf:name ?name"
     ></ul>
     -->
-    Here's the results of an image tag enchanced by Sol-Components' <code>data-from-query</code> attribute that listens for changes in the store and alters the img's src when the store changes.
+    Sol-components' <code>data-from-query</code> attribute, when placed in an img tag, does a live query of the store and replaces the img tag's src attribute based on CurrentPerson.
     <img class="photo" alt=""
          data-from-query
          pattern="<urn:solpos:currentPerson> <https://solpos.example/ns#photo> ?url">
   </section>
 </div>
-<button type="button" class="view-code-btn">View code</button>
 
 
 <script type="module">

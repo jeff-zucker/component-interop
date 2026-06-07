@@ -1,41 +1,31 @@
-   Here's the whole code on the Sol-Component side:
-    <div><b>&lt;img data-from-query pattern="ex:currentPerson schema:photo ?url"></b></div>
 
 <style>
 h2  { margin-bottom: 0; }
 xmp { margin-top: 0; }
 </style>
+<!-- Note this uses simplified curies rather than the actual ones, otherwise, it is the same as the demo -->
 
-<xmp><!-- data-objects="store" loads swc's store consumer before PodOS boots, so swc
-     adopts PodOS's store. data-from-query is swc's live reader of that graph. -->
-<script src="../component-interop.js"
+<b>1. Import the store from PodOS, prefer it to the Sol-Component store, import the data-from-query attribute.
+<xmp><script src="../component-interop.js"
         data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
         data-components="@pod-os/elements"
-        data-objects="store"
-        data-attributes="data-from-query"
-></script>
+        <b>data-objects="store:pod-os"</b>
+        <b>data-attributes="data-from-query"</b>
+></script></xmp>
 
-<!-- PodOS owns the shared graph. Plain buttons pick the current person. -->
-<pos-app>
-  <button class="person-pick" value="https://angelo.veltens.org/profile/me.jpg">Angelo Veltens</button>
-  …
-</pos-app>
+<b>2. Use Sol-Components' data-from-query attribute in an img tag - it will listen for changes to the store based on its pattern attribute.</b>
+<xmp><img data-from-query pattern="urn:currentPerson urn:hasPhoto ?url"></xmp>
 
-<!-- swc adopted that graph (rdf.useStore). On an <img>, data-from-query sets the
-     matched URI as its src — no `endpoint`, so nothing is fetched — re-running
-     when a button writes. -->
-<img data-from-query pattern="<urn:solpos:currentPerson> <https://solpos.example/ns#photo> ?url">
-
-<script type="module">
-  // Picking a person writes their foaf:name and photo into the shared store;
-  // the <img data-from-query> above mirrors the photo live.
-  const rdf = window.ComponentInterop.services.get('rdf');
-  const s = rdf.sym('urn:solpos:currentPerson');
-  const set = (p, o) => {
-    rdf.store.statementsMatching(s, rdf.sym(p), null).forEach((st) => rdf.store.remove(st));
-    rdf.store.add(s, rdf.sym(p), o, s.doc());
-  };
-  set('http://xmlns.com/foaf/0.1/name', rdf.literal('Angelo Veltens'));
-  set('https://solpos.example/ns#photo', rdf.sym('https://angelo.veltens.org/profile/me.jpg'));
+3. Write a script to be activated on button clicks that edits the CurrentPerson record in the store
+<xmp><script type="module">
+  const rdf    = window.ComponentInterop.services.get('rdf');
+  const person = rdf.sym('urn:currentPerson');
+  const photo  = rdf.sym('urn:hasPhoto');
+  document.querySelectorAll('.person-pick').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      rdf.store.statementsMatching(person, photo, null)
+         .forEach((st) => rdf.store.remove(st));                       // drop the old photo
+      rdf.store.add(person, photo, rdf.sym(btn.value), person.doc());  // write the chosen one
+    }));
 </script></xmp>

@@ -244,6 +244,57 @@ test('data-objects with an UNKNOWN key (declared by no manifest) warns', require
     'warns that the opted-in key matches no declaration (likely a typo)');
 });
 
+// ── inline host: a data-objects token may be `key:provider` (opt in AND prefer) ───
+test('inline host: "thing:libA" opts in AND prefers libA over a higher-priority libB', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    ...providerPair({ aPriority: 1, bPriority: 5 }),   // priority alone → libB
+    consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take' } } } },
+  });
+  const ctx = loadCI({ dataset: { manifest, objects: 'thing:libA' }, fetchMap });
+  await ctx.api.ready;
+  const { from, got } = await wireAndDetect(ctx, 'ev:a');
+  assert.equal(from, 'libA', 'the inline host beat the higher-priority provider');
+  assert.deepEqual(got, ['X']);
+});
+
+test('inline host: an explicit data-prefer wins over the data-objects inline host', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    ...providerPair({ aPriority: 0, bPriority: 0 }),
+    consumer: { name: 'consumer', objects: { consumes: { thing: { call: 'take' } } } },
+  });
+  const ctx = loadCI({
+    dataset: { manifest, objects: 'thing:libA', prefer: JSON.stringify({ thing: 'libB' }) },
+    fetchMap,
+  });
+  await ctx.api.ready;
+  const { from } = await wireAndDetect(ctx, 'ev:b');
+  assert.equal(from, 'libB', 'data-prefer libB beat the inline host libA');
+});
+
+test('inline host: the key still eager-loads its module (host stripped for loading)', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    consumer: {
+      name: 'consumer',
+      components: { 'x-widget': 'widget.js' },
+      objects: { consumes: { store: { call: 'useStore', module: 'store-core.js' } } },
+    },
+  });
+  const ctx = loadCI({ dataset: { manifest, objects: 'store:libA', components: 'x-widget' }, fetchMap });
+  await ctx.api.ready;
+  assert.deepEqual(ctx.importedSpecs, ['store-core.js', 'x-widget'], 'store:libA still loads the store module');
+  assert.ok(ctx.api.has('store'), 'capability marked on the stripped key');
+});
+
+test('inline host: an unknown key warns on the stripped key (host dropped from the message)', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    consumer: { name: 'consumer', objects: { consumes: { store: { call: 'useStore' } } } },
+  });
+  const ctx = loadCI({ dataset: { manifest, objects: 'bogus:libX' }, fetchMap });
+  await ctx.api.ready;
+  assert.ok(ctx.logs.warn.some((w) => w.includes('data-objects "bogus"') && w.includes('unknown')),
+    'warns about the stripped key, not "bogus:libX"');
+});
+
 // ── pickProvider: choosing among several providers of the same capability ─────────
 // Each provider uses a DISTINCT event so we can detect which one the broker wired.
 function providerPair(extra = {}) {
