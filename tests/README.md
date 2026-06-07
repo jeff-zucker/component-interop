@@ -42,5 +42,6 @@ npm install -g jsdom      # global — keeps this repo clean
   registry, the consumer registry, `registerCapability`, importmap injection
   (incl. page-owns-it and `data-importmap-extra`), manifest merging (first-wins),
   provide→consume wiring, `pickProvider` (prefer / `from` / priority / manifest
-  order), the resource channel, `load()` + auto-load, the lifecycle
+  order), the `data-objects`/`data-attributes` opt-in gates and the `key:provider`
+  inline host, the resource channel, `load()` + auto-load, the lifecycle
   events, and same-origin manifest security.

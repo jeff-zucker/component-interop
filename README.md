@@ -22,6 +22,7 @@ This zero-dependency, tiny (17kb) library is component-agnostic - any web compon
   * apps can tree shake component libraries, pulling only what they need
   * externalized prereqs (e.g. rdflib) and components are guaranteed to only load once
   * in some cases, one can use attributes from a foreign library without importing the full component
+* is explicit - what a page draws from each library is named in its script tag (data-components, data-objects, data-attributes); nothing wires implicitly
 
 ### Check out  the [demo](examples/index.html)!
 

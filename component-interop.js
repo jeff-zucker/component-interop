@@ -491,8 +491,9 @@
     else fn();
   }
 
-  // Auto-load chain: fetch manifest(s), inject importmap, broker, import the
-  // `data-components`, then (at DOM-ready) auto-load attributes that appear.
+  // Load chain: fetch manifest(s), inject importmap, broker, import the
+  // `data-components`, then (at DOM-ready) load the `data-attributes` that are both
+  // named on the tag and present in the DOM.
   var auto = (ds.components || ds.load || '').trim();
   loadManifests().then(function () {
     ensureImportmap();
