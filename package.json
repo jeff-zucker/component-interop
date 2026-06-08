@@ -18,7 +18,8 @@
   ],
   "scripts": {
     "test": "node --test --experimental-test-coverage --test-coverage-exclude='tests/**'",
-    "test:plain": "node --test"
+    "test:plain": "node --test",
+    "test:firefox": "node --test tests/firefox-importmap.browser.mjs"
   },
   "keywords": [
     "web-components",
@@ -37,5 +38,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/jeff-zucker/component-interop"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
   }
 }

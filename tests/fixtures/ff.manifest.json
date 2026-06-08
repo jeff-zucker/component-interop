@@ -1,0 +1,4 @@
+{
+  "name": "fftest",
+  "components": { "ff-widget": "/tests/fixtures/ff-widget.js" }
+}

@@ -28,6 +28,24 @@ This zero-dependency, tiny (17kb) library is component-agnostic - any web compon
 
 ### Visit the [documentation](https://jeff-zucker.github.io/component-interop/help/index.html)!
 
+### Tests
+
+```sh
+npm test            # node unit suite (jsdom + vm), zero deps
+npm run test:firefox   # real-Firefox regression test (needs Playwright)
+```
+
+The Firefox test guards the import-map timing: ci must inject its importmap
+synchronously, before any module load, or Firefox rejects it. It needs the
+Playwright Firefox binary (a **dev**-only dependency — the library itself stays
+zero-dependency):
+
+```sh
+npm i -D playwright && npx playwright install firefox
+```
+
+If Playwright isn't installed, the test skips rather than fails.
+
 ### Transparency
 
 Portions created using Claude Opus 4.8.

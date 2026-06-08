@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ci Firefox importmap fixture</title>
+  <!-- ci must be a plain blocking <head> script: it fetches the manifest and injects
+       its importmap SYNCHRONOUSLY, before the parser reaches the body module below.
+       If injection ever regresses to async, Firefox rejects the late map and the
+       bare specifier "ff-widget" fails to resolve. -->
+  <script src="/component-interop.js"
+          data-stage="local"
+          data-components="ff-widget"
+          data-manifest="/tests/fixtures/ff.manifest.json"></script>
+</head>
+<body>
+  <ff-widget></ff-widget>
+  <!-- A page module script: starts a module load during parse. With ci's sync
+       injection the map is already registered; this is what locked it when ci
+       injected late (the original Firefox bug). -->
+  <script type="module">window.__ffPageModuleRan = true;</script>
+</body>
+</html>
