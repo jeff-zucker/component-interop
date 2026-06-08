@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ci browser importmap fixture</title>
+  <!-- ci must be a plain blocking <head> script: it fetches the manifest and injects
+       its importmap SYNCHRONOUSLY, before the parser reaches the body module below.
+       If injection regresses to async, Firefox (the strict engine) rejects the late
+       map and the bare specifier "interop-widget" fails to resolve. -->
+  <script src="/component-interop.js"
+          data-stage="local"
+          data-components="interop-widget"
+          data-manifest="/tests/fixtures/interop.manifest.json"></script>
+</head>
+<body>
+  <interop-widget></interop-widget>
+  <!-- A page module script: starts a module load during parse. With ci's sync
+       injection the map is already registered; this is what locked a late map. -->
+  <script type="module">window.__pageModuleRan = true;</script>
+</body>
+</html>

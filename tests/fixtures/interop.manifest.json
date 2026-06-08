@@ -1,0 +1,4 @@
+{
+  "name": "browsertest",
+  "components": { "interop-widget": "/tests/fixtures/widget.js" }
+}

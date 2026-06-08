@@ -31,20 +31,22 @@ This zero-dependency, tiny (17kb) library is component-agnostic - any web compon
 ### Tests
 
 ```sh
-npm test            # node unit suite (jsdom + vm), zero deps
-npm run test:firefox   # real-Firefox regression test (needs Playwright)
+npm test             # node unit suite (jsdom + vm), zero deps
+npm run test:browsers   # real-browser regression test in Chromium, Firefox & WebKit (needs Playwright)
 ```
 
-The Firefox test guards the import-map timing: ci must inject its importmap
-synchronously, before any module load, or Firefox rejects it. It needs the
-Playwright Firefox binary (a **dev**-only dependency — the library itself stays
-zero-dependency):
+The browser test guards the import-map timing: ci must inject its importmap
+synchronously, before any module load, or the browser rejects it. Of the three
+engines only **Firefox** is strict enough to fail on a regression (Chromium and
+WebKit are lenient), so it's the tripwire — but all three run to prove the loader
+works everywhere. It needs Playwright + its browser binaries (a **dev**-only
+dependency — the library itself stays zero-dependency):
 
 ```sh
-npm i -D playwright && npx playwright install firefox
+npm i -D playwright && npx playwright install
 ```
 
-If Playwright isn't installed, the test skips rather than fails.
+If Playwright isn't installed, the tests skip rather than fail.
 
 ### Transparency
 
