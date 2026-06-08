@@ -108,7 +108,11 @@
   <iframe data-src="authoring.html" title="Authoring for Component Interop" loading="lazy"></iframe>
 </div>
 
-<script type="module">
+<!-- Classic (not type="module"): this is tab/keyboard wiring with no import/export.
+     A module script here would start a module load before component-interop.js
+     injects its import map, and Firefox then rejects the late map — leaving the
+     data-handler capability's bare specifier unresolvable. -->
+<script>
   // These demos use ES modules, fetch (manifests) and import maps — none of which
   // run from file://. Show how to serve instead of a cryptic broken page.
   if (location.protocol === 'file:') {
