@@ -12,7 +12,9 @@
     "component-interop.js",
     "examples",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "!**/*~",
+    "!**/*.swp"
   ],
   "scripts": {
     "test": "node --test --experimental-test-coverage --test-coverage-exclude='tests/**'",
