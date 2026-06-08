@@ -1,8 +1,6 @@
 
 # component-interop
 
-**Quickest way to learn: try the [demo](examples/index.html).**
-
 A **zero-dependency, manifest-driven capability broker for web components.** It lets
 independently-authored component libraries share a store, a session, and capabilities — and
 coordinate navigation — **without importing each other and without page glue code.**
