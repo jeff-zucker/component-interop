@@ -10,12 +10,37 @@ xmp { margin-top: 0; }
         data-attributes="data-edit-shape"
 ></script>
 
-<pos-app><pos-resource uri="sample-profile.ttl"></pos-resource></pos-app>
+<!-- PodOS shows the record; the data-edit-* attributes on the SAME element put
+     an edit pencil (✏️) on it. Clicking the pencil opens a modal form from the shape. -->
+<pos-app>
+  <pos-resource uri="sample-profile.ttl#me"
+                data-edit-shape="profile.shape.ttl"
+                data-subject="sample-profile.ttl#me"
+                data-edit-mode="inPlace"
+  >
+    <pos-label></pos-label>
+    <pos-literals></pos-literals>
+  </pos-resource>
+</pos-app>
+<script>
+  // PodOS needs an absolute IRI; resolve pos-resource's uri against the page.
+  var posRes = document.querySelector('pos-resource');
+  var recordUri = new URL(posRes.getAttribute('uri'), document.baseURI).href;
+  posRes.setAttribute('uri', recordUri);
 
-<!-- a plain div becomes a form generated from a SHACL shape -->
-<div data-edit-shape="profile.shape.ttl"
-     data-subject="sample-profile.ttl#me"
-     data-edit-mode="collected"
-     label="Profile"
-></div>
-<sol-settings></sol-settings></xmp>
+  // Capture PodOS's store from its loaded event.
+  var podStore = null;
+  document.addEventListener('pod-os:loaded', function (e) {
+    podStore = e.detail && e.detail.os && e.detail.os.store && e.detail.os.store.internalStore;
+  });
+
+  // On modal close: clear the record's stale triples from PodOS's store (its
+  // fetch merges rather than replaces), then re-fetch once so the edit shows.
+  document.addEventListener('sol-close', async function () {
+    if (podStore) {
+      var rdf = await ComponentInterop.services.whenReady('rdf');
+      podStore.removeDocument(rdf.sym(recordUri.split('#')[0]));
+    }
+    posRes.fetch();
+  });
+</script></xmp>

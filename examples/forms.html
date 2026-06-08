@@ -4,15 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>solpos — Forms: a PodOS page gains Solid Web Components editing</title>
+  <title>solpos — Forms: a pencil on a PodOS record opens a modal editor</title>
 
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
   >
 
   <!-- component-interop pulls in PodOS (its descriptor) and Solid Web Components
-       (its manifest). The data-edit-* attributes below auto-load swc's rdf-bundle,
-       so a plain element on this PodOS page becomes a form from a SHACL shape. -->
+       (its manifest). PodOS displays the record; the data-edit-* attributes on
+       that same PodOS element auto-load swc's rdf-bundle, which puts an edit
+       pencil (✏️) on the record. Clicking the pencil opens a sol-modal holding a
+       form generated from the SHACL shape. The form autosaves each change; when
+       the modal closes, the record's stale triples are cleared from PodOS's
+       store and re-fetched, so the record shows the edit. -->
   <link rel="view-code" href="forms.modal.html">
   <script src="../component-interop.js"
           data-stage="auto"
@@ -24,55 +28,70 @@
   <style>
     :root { color-scheme: light; font-size: 18px; }
     html, body { background: #eef4ff; color: #1a1a1a; }
-    body  { font: 1rem/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    body  { font: 1rem/1.6 system-ui, sans-serif; margin: 2rem; max-width: 60rem;
+            min-height: calc(100vh - 4rem); display: flex; flex-direction: column; }
     h1    { font-size: 1.5rem; }
     .intro { background: #fff; border: 1px solid #b9ccea; border-radius: 8px;
              padding: 1rem 1.25rem; color: #1a1a1a; }
     .note { background: #f3f6fa; border: 1px solid #c9d3df; border-radius: 6px;
             padding: .75rem 1rem; font-size: 1rem; color: #1a1a1a; margin-top: 1rem; }
-    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1.25rem 0; background: #fff; }
+    /* The record card grows to fill the page; the record itself scrolls so its
+       bottom sits ~2rem (the body margin) above the viewport edge. */
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: 1.25rem 0; background: #fff;
+            flex: 1; display: flex; flex-direction: column; min-height: 0; }
     .card h2 { font-size: 1.05rem; margin: 0 0 .75rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
-    pos-container-contents { display: block; max-height: 12em; overflow-y: auto; margin: 0; }
+    pos-app { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    pos-resource { flex: 1; min-height: 0; overflow-y: auto; display: block; }
+    pos-literals { display: block; margin: .5rem 0 0; }
   </style>
 </head>
 <body>
 
-<button type="button" class="view-code-btn">View code</button>
-
-<h1>Forms — a PodOS page, gaining Solid Web Components editing</h1>
 
 <div class="intro">
-  PodOS displays a resource. Because the <code>data-edit-*</code> attributes below auto-load
-  Solid Web Components' editing modules, a plain <code>&lt;div&gt;</code> next to it becomes an
-  <strong>editor generated from a SHACL shape</strong> — <code>data-edit-shape</code> +
-  <code>data-subject</code> + <code>data-edit-mode</code>, no component code. swc and PodOS read
-  the same RDF; the form edits the very data PodOS shows.
+The PodOS component <code>&lt;pos-literals></code> displays a record and adds the Sol-Component imported attribute <code>data-edit-shape</code>.  This attribute reads the specified shape and auto-creates a solid-ui form for it and places a pencil icon on the PodOS element.  When clicked the form opens in a modal and if the user is logged in, is able to edit it.
+<button type="button" class="view-code-btn">View code</button>
 </div>
 
 <div class="card">
-  <h2>PodOS shows the resource</h2>
+  <h2>PodOS shows the record — click its pencil to edit</h2>
   <pos-app>
-    <pos-resource uri="../../sol-components/examples/sample-profile.ttl">
-      <pos-container-contents></pos-container-contents>
+    <pos-resource uri="sample-profile.ttl#me"
+                  data-edit-shape="profile.shape.ttl"
+                  data-subject="sample-profile.ttl#me"
+                  data-edit-mode="inPlace"
+    >
+      <pos-label></pos-label>
+      <pos-literals></pos-literals>
     </pos-resource>
   </pos-app>
-</div>
+  <script>
+    // PodOS needs an absolute IRI (rdflib's NamedNode rejects a relative path);
+    // resolve pos-resource's uri against this page. swc absolutizes data-subject
+    // on its own, so only the PodOS side needs this.
+    var posRes = document.querySelector('pos-resource');
+    var recordUri = new URL(posRes.getAttribute('uri'), document.baseURI).href;
+    posRes.setAttribute('uri', recordUri);
 
-<div class="card">
-  <h2>Solid Web Components edits it — a form from a shape</h2>
-  <div data-edit-shape="../../sol-components/examples/profile.shape.ttl"
-       data-subject="../../sol-components/examples/sample-profile.ttl#me"
-       data-edit-mode="collected"
-       label="Profile"
-  ></div>
-  <sol-settings></sol-settings>
-  <p class="note">
-    The plain <code>&lt;div&gt;</code> never had to be a component — the capability supplied the
-    behaviour, and <code>&lt;sol-settings&gt;</code> gathers the editor into a panel. (Saving needs
-    write access; against this static sample it renders and edits the form — the PUT is what a real
-    pod would accept. The <strong>Auth</strong> tab supplies the session that makes a save land.)
-  </p>
+    // Capture PodOS's store so we can refresh it cleanly after an edit.
+    var podStore = null;
+    document.addEventListener('pod-os:loaded', function (e) {
+      podStore = e.detail && e.detail.os && e.detail.os.store && e.detail.os.store.internalStore;
+    });
+
+    // When the editor modal closes, show the edit. PodOS's fetch is force:true
+    // but doesn't pass clearPreviousData, so a plain refetch MERGES the edited
+    // value onto the old one (duplicate rows). So: drop the record's triples
+    // from PodOS's store first, then re-fetch once via pos-resource.fetch().
+    document.addEventListener('sol-close', async function () {
+      if (podStore) {
+        var rdf = await ComponentInterop.services.whenReady('rdf');
+        podStore.removeDocument(rdf.sym(recordUri.split('#')[0]));
+      }
+      posRes.fetch();
+    });
+  </script>
 </div>
 
 <pre id="demo-manifests" hidden>
@@ -80,7 +99,7 @@
 # (no object shared here — using the attributes just pulls in code on demand)
 {
   "bundles": {
-    "rdf-bundle": ["solid-logic", "solid-ui", "sol-form", "sol-settings", "…"]
+    "rdf-bundle": ["solid-logic", "solid-ui", "sol-form", "sol-modal", "sol-settings", "…"]
   },
   "attributes": {
     "data-edit-shape data-subject data-edit-mode": "rdf-bundle"
