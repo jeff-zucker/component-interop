@@ -25,7 +25,10 @@ complete inventory of what the page uses and what cross-wires.
 ```
 
 It is a classic script (no build step needed), exposes `window.ComponentInterop`, and has **no
-runtime dependencies**.
+runtime dependencies**. Load it as a **plain blocking `<script>` in `<head>`** — not `async`,
+`defer`, or `type="module"`. It reads the manifests and injects its importmap synchronously,
+before the parser moves on, because an importmap added after any module load has started is
+rejected (Firefox enforces this strictly; Chromium is lenient).
 
 ## What it does
 

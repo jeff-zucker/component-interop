@@ -103,6 +103,17 @@ export function loadCI(opts = {}) {
     return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(typeof m === 'function' ? m() : m) });
   };
 
+  // The loader fetches manifests with a SYNCHRONOUS XMLHttpRequest (so the import
+  // map lands before the parser yields). Stub it from the same fetchMap.
+  function XHRImpl() {}
+  XHRImpl.prototype.open = function (method, url) { this._url = url; };
+  XHRImpl.prototype.send = function () {
+    const m = fetchMap[this._url];
+    if (m === undefined) { this.status = 404; this.responseText = ''; return; }
+    this.status = 200;
+    this.responseText = JSON.stringify(typeof m === 'function' ? m() : m);
+  };
+
   if (domSetup) domSetup(doc, win);
 
   // Run the loader at top level in a fresh vm context (so coverage maps to the real
@@ -110,7 +121,7 @@ export function loadCI(opts = {}) {
   // (Promise, Object, …) come from the context itself.
   const sandbox = {
     window: win, document: doc, location: win.location,
-    fetch: fetchImpl, CustomEvent: win.CustomEvent, URL: win.URL,
+    fetch: fetchImpl, XMLHttpRequest: XHRImpl, CustomEvent: win.CustomEvent, URL: win.URL,
     console: con, _ciImp: imp,
   };
   vm.createContext(sandbox);
