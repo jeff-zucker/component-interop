@@ -3,23 +3,23 @@ h2  { margin-bottom: 0; }
 xmp { margin-top: 0; }
 </style>
 
+<b>1. Declare that you want to use PodOS's authenticated fetch.</b>
 <xmp><script src="../component-interop.js"
         data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
         data-components="sol-include @pod-os/elements"
-        data-objects="auth:pod-os"
-></script>
+        <b>data-objects="auth:pod-os"</b>
+></script></xmp>
 
-<pos-app>
+<b>2. Put a PodOS button and &lt;pos-resource> element in the page</b>
+<xmp><pos-app>
   <pos-login></pos-login>
   <pos-resource id="pos-priv"><pos-container-contents></pos-container-contents></pos-resource>
   <sol-include id="swc-priv" raw></sol-include>
-</pos-app>
+</pos-app></xmp>
 
-<!-- PodOS owns the login. On sign-in, point PodOS at /private/ (its own session),
-     and point swc's <sol-include> at it once the broker has adopted PodOS's fetch
-     (both react to pod-os:loaded, so swc waits to avoid a 401 race). -->
-<script type="module">
+<b>3. Listen for login to finish, then update URLs.</b>
+<xmp><script type="module">
   const adopted = () => typeof window.SolidWebComponents?.adoptedFetch === 'function';
   document.addEventListener('pod-os:loaded', (e) => {
     e.detail.os.observeSession().subscribe((s) => {
