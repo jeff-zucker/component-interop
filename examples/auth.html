@@ -4,25 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>solpos — Auth: a Solid Web Components login, shared with PodOS</title>
+  <title>solpos — Shared Auth: a PodOS login, adopted by Solid Web Components</title>
 
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
   >
 
-  <!-- component-interop loads both manifests; data-components loads swc's
-       <sol-login> + <sol-include>. Logging in with sol-login establishes the
-       session both sides try to read your pod's /private/ with.
-       PodOS (@pod-os/elements) is loaded LATER, by the sol-login handler below —
-       NOT here — so that <pos-app> isn't live during sol-login's OIDC redirect.
-       If it were, PodOS would try to process sol-login's redirect and throw
-       (RFC 9207: iss mismatch). Deferring its load sidesteps that collision. -->
+  <!-- One login, shared across two libraries. PodOS owns the login: its
+       <pos-login> establishes the session. component-interop wires the auth
+       channel from PodOS to swc (data-objects="auth:pod-os"), so swc's
+       <sol-include> *adopts* PodOS's authenticated fetch and reads your pod's
+       /private/ — with no <sol-login> anywhere on the page. -->
   <link rel="view-code" href="auth.modal.html">
   <script src="../component-interop.js"
           data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
-          data-components="sol-components/core/inrupt-global.js sol-login sol-include"
-          data-objects="auth"
+          data-components="sol-include @pod-os/elements"
+          data-objects="auth:pod-os"
   ></script>
 
   <style>
@@ -50,101 +48,106 @@
 
 <button type="button" class="view-code-btn">View code</button>
 
-<h1>Auth — one login, shared across two libraries</h1>
+<h1>Shared Auth — one login, shared across two libraries</h1>
 
 <div class="intro">
-  Sign in with Solid Web Components' <code>&lt;sol-login&gt;</code> (pick an issuer). On login this
-  page reads <strong>your pod's <code>/private/</code></strong> two ways: swc's
-  <code>&lt;sol-include&gt;</code> fetches it with the <code>&lt;sol-login&gt;</code> session, and
-  PodOS's <code>&lt;pos-resource&gt;</code> is pointed at the same URL. The swc side proves the
-  session is shared; whether the PodOS side picks it up is shown below.
+  <strong>PodOS owns the login</strong>: sign in with PodOS's <code>&lt;pos-login&gt;</code> (there is
+  no <code>&lt;sol-login&gt;</code> on this page). component-interop wires the auth channel from PodOS
+  to Solid Web Components (<code>data-objects="auth:pod-os"</code>), so swc's
+  <code>&lt;sol-include&gt;</code> <em>adopts</em> PodOS's authenticated fetch and reads
+  <strong>your pod's <code>/private/</code></strong> with it — the same session, used by components
+  from both libraries.
 </div>
 
-<div class="bar">
-  <sol-login visible
-             issuers="https://solidcommunity.net,https://solidweb.me,https://solidweb.org"
-  ></sol-login>
-  <span class="status" id="status">Not signed in — pick an issuer and log in.</span>
-</div>
-
-<div class="cols">
-  <div class="col">
-    <h2>Solid Web Components</h2>
-    <p class="cap"><code>&lt;sol-include raw&gt;</code> fetches <code>/private/</code> with the
-      sol-login session.</p>
-    <sol-include id="swc-priv" raw></sol-include>
+<pos-app>
+  <div class="bar">
+    <pos-login></pos-login>
+    <span class="status" id="status" role="status" aria-live="polite">Not signed in — log in with PodOS.</span>
   </div>
 
-  <div class="col">
-    <h2>PodOS</h2>
-    <p class="cap"><code>&lt;pos-resource&gt;</code> pointed at the same <code>/private/</code>.</p>
-    <pos-app>
+  <div class="cols">
+    <div class="col">
+      <h2>PodOS</h2>
+      <p class="cap"><code>&lt;pos-resource&gt;</code> reads <code>/private/</code> with PodOS's own
+        session.</p>
       <pos-resource id="pos-priv">
         <pos-container-contents></pos-container-contents>
       </pos-resource>
-    </pos-app>
+    </div>
+
+    <div class="col">
+      <h2>Solid Web Components</h2>
+      <p class="cap"><code>&lt;sol-include raw&gt;</code> reads the same <code>/private/</code> — using
+        the fetch it <em>adopted</em> from PodOS.</p>
+      <sol-include id="swc-priv" raw></sol-include>
+    </div>
   </div>
-</div>
+</pos-app>
 
 <p class="note" id="caveat">
-  Note: PodOS's <code>&lt;pos-app&gt;</code> manages its own session and exposes no hook to adopt an
-  outside fetch, and swc's login patches rdflib's <code>Fetcher</code> (not global <code>fetch</code>).
-  So the swc side is the reliable proof that the session is shared; the PodOS side may still prompt
-  for its own login depending on how it fetches. component-interop wires what each library
-  <em>declares</em> — it can't reach past an API a library doesn't offer. (PodOS is loaded only
-  <em>after</em> sol-login finishes, so the two OIDC clients don't fight over the sign-in redirect;
-  for the reverse — PodOS owning the login and swc adopting it — see the <strong>Adopted Auth</strong> tab.)
+  How it works: PodOS <em>provides</em> auth (<code>pod-os:loaded → authenticatedFetch</code>) and
+  swc <em>consumes</em> it (<code>adoptFetch</code>). swc's fetch resolver honors an adopted foreign
+  fetch, so the broker can hand PodOS's session straight into <code>&lt;sol-include&gt;</code>. The
+  swc column reading your private data is the proof — no swc login UI is present. (The reverse —
+  swc's <code>&lt;sol-login&gt;</code> sharing <em>to</em> PodOS — isn't possible: PodOS exposes no
+  hook to adopt an outside fetch, so auth flows PodOS → swc, not the other way.)
 </p>
 
 <script type="module">
-  // Local testing only: offer the local authed CSS (claude/dev-idp, port 3005) as
-  // a sol-login issuer. Guarded to localhost so it never appears on the deployed
-  // demo. Start it with `bash claude/dev-idp/run-idp.sh` (login test@example.com /
-  // secret!) — the public issuers above are CSS/Pivot and currently fail at the
-  // OIDC authorize step.
-  if (location.hostname === 'localhost') {
-    customElements.whenDefined('sol-login').then(() => {
-      document.querySelector('sol-login')?.addIssuer('http://localhost:3005/');
+  // PodOS owns the session. On `pod-os:loaded` we get the `os` instance; observe
+  // its session, and when signed in derive the pod's /private/ from the WebID and
+  // point both libraries at it. swc's <sol-include> fetches it with the fetch the
+  // broker already adopted from PodOS — proving the session crossed libraries.
+  // swc reads /private/ with the fetch the broker adopts from PodOS. Both the
+  // adoption and this handler react to the SAME `pod-os:loaded` event, so on a
+  // listener-order race swc could fetch before the fetch is adopted (→ 401).
+  // Point <sol-include> at /private/ only once the adopted fetch is in place.
+  function whenAdoptedFetch(cb) {
+    let tries = 0;
+    (function poll() {
+      const swc = window.SolidWebComponents;
+      if (swc && typeof swc.adoptedFetch === 'function') return cb();
+      if (++tries > 50) return cb();   // ~1s: give up and let it show the result
+      setTimeout(poll, 20);
+    })();
+  }
+
+  document.addEventListener('pod-os:loaded', (e) => {
+    const os = e.detail && e.detail.os;
+    if (!os || typeof os.observeSession !== 'function') return;
+    os.observeSession().subscribe((session) => {
+      const status = document.getElementById('status');
+      const swc = document.getElementById('swc-priv');
+      const pos = document.getElementById('pos-priv');
+      if (session && session.isLoggedIn && session.webId) {
+        let priv;
+        try { priv = new URL(session.webId).origin + '/private/'; }
+        catch (_) { return; }
+        status.textContent = `Signed in as ${session.webId} — loading ${priv}`;
+        pos.setAttribute('uri', priv);                            // PodOS uses its own session
+        whenAdoptedFetch(() => swc.setAttribute('source', priv)); // swc waits for the adopted fetch
+      } else {
+        status.textContent = 'Not signed in — log in with PodOS.';
+        swc.removeAttribute('source');
+        pos.removeAttribute('uri');
+      }
     });
-  }
-
-  // PodOS is loaded on demand here (not via data-components) so <pos-app> is not
-  // live during sol-login's redirect. We load it once, only after the first
-  // successful sol-login — by then swc's OIDC client has consumed and cleared the
-  // redirect params, so PodOS boots clean instead of choking on them.
-  let posReady;
-  function showPosPrivate(priv) {
-    posReady = posReady || window.ComponentInterop.load('@pod-os/elements');
-    posReady.then(() => document.getElementById('pos-priv').setAttribute('uri', priv));
-  }
-
-  // On login, derive the pod root from the WebID origin and point both libraries
-  // at /private/ on that pod. sol-include reloads on `source` change; pos-resource
-  // reloads on `uri` change.
-  document.addEventListener('sol-login', (e) => {
-    const webId = e.detail && e.detail.webId;
-    if (!webId) return;
-    let priv;
-    try { priv = new URL(webId).origin + '/private/'; }
-    catch (_) { return; }
-    document.getElementById('status').textContent = `Signed in as ${webId} — loading ${priv}`;
-    document.getElementById('swc-priv').setAttribute('source', priv);
-    showPosPrivate(priv);
-  });
-  document.addEventListener('sol-logout', () => {
-    document.getElementById('status').textContent = 'Signed out.';
-    document.getElementById('swc-priv').removeAttribute('source');
-    document.getElementById('pos-priv')?.removeAttribute('uri');
   });
 </script>
 
 <pre id="demo-manifests" hidden>
-# sol-components manifest — sol-login is a plain component; it shares the session
+# sol-components manifest — swc consumes auth, adopting a foreign authenticated fetch
 {
-  "components": { "sol-login": "../web/sol-login.js" },
   "objects": {
     "provides": { "auth": { "service": "auth", "sendValue": "fetch" } },
-    "consumes": { "auth": { "call": "adoptFetch" } }
+    "consumes": { "auth": { "call": "adoptFetch", "module": "sol-components/core/services.js" } }
+  }
+}
+
+# pod-os manifest — PodOS provides auth from its own session
+{
+  "objects": {
+    "provides": { "auth": { "respondTo": "pod-os:loaded", "sendValue": "detail.authenticatedFetch" } }
   }
 }
 </pre>

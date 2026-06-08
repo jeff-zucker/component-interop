@@ -53,8 +53,7 @@ wires it. Each demo is some mix of the offerings:
 | **Shared Store** | `data-objects="store:pod-os"` + PodOS | the RDF store — PodOS `provides` `store` (`internalStore`) → swc `consumes` it (`rdf.useStore`); the `:pod-os` host names PodOS as the shared store. swc's `.store` **is** PodOS's, same object, read live with `data-from-query` |
 | **Auto-generated Forms** | `data-attributes="data-edit-shape"` (loads `rdf-bundle`) | — (a plain `<div>` + `data-edit-shape` becomes a shape-driven editor) |
 | **Shared SPARQL / live store** | `data-attributes="data-from-query"` | — (`data-from-query` on a plain `<ul>`: SPARQL with an `endpoint`, or a no-`endpoint` triple `pattern` that reads the shared store **live**) |
-| **Shared Auth** | `data-objects="auth"` + swc's `<sol-login>` | the authenticated `fetch` (the sign-in session) — swc owns the login; the page proves the swc side reads `/private/` with it |
-| **Adopted Auth** | `data-objects="auth:pod-os"` + PodOS's `<pos-login>` | the authenticated `fetch`, the other direction — **PodOS** owns the login; PodOS `provides` `auth` (`authenticatedFetch`) → swc `consumes` it (`adoptFetch`), so swc's `<sol-include>` reads `/private/` with PodOS's session and no `<sol-login>` is present |
+| **Shared Auth** | `data-objects="auth:pod-os"` + PodOS's `<pos-login>` | the authenticated `fetch` (the sign-in session) — **PodOS** owns the login; PodOS `provides` `auth` (`authenticatedFetch`) → swc `consumes` it (`adoptFetch`), so swc's `<sol-include>` reads `/private/` with PodOS's session and no `<sol-login>` is present |
 
 So **Forms** and **SPARQL** are pure *attributes* — a PodOS page gains a swc behaviour by naming
 the `data-*` in `data-attributes` and using it, and ci loads the code. **Navigation**, **Store**,
@@ -77,11 +76,9 @@ page directly, e.g. `…/solpos/query.html`).
 - **Shared Navigation is one-way** (swc drives → PodOS follows). The reverse
   (navigate in PodOS → swc follows) is parked in
   `../../claude/investigations/two-way-resource-channel.md`.
-- **Auth has a reliable direction.** When **swc** owns the login (**Shared Auth**),
-  PodOS's `<pos-app>` manages its own session and exposes no hook to adopt an outside
-  fetch, and swc's `<sol-login>` patches rdflib's `Fetcher` (not the global `fetch`) — so
-  the swc `<sol-include>` is the dependable proof the session is shared; the PodOS side may
-  still use its own login. The clean cross-library case is the reverse (**Adopted Auth**):
-  **PodOS** owns the login and *provides* `authenticatedFetch`, which swc *adopts* via
-  `adoptFetch` (its fetch resolver honors a foreign fetch). component-interop wires what a
-  library *declares* — it can't reach past an API a library doesn't offer.
+- **Auth flows PodOS → swc, not the other way.** In **Shared Auth**, PodOS owns the
+  login and *provides* its `authenticatedFetch`, which swc *adopts* via `adoptFetch` (its
+  fetch resolver honors a foreign fetch) — so a swc component reads `/private/` on PodOS's
+  session. The reverse (swc's `<sol-login>` sharing *to* PodOS) isn't possible: PodOS
+  exposes no hook to adopt an outside fetch. component-interop wires what a library
+  *declares* — it can't reach past an API a library doesn't offer.

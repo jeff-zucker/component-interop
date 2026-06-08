@@ -6,24 +6,30 @@ xmp { margin-top: 0; }
 <xmp><script src="../component-interop.js"
         data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
-        data-components="sol-components/core/inrupt-global.js sol-login sol-include"
-        data-objects="auth"
+        data-components="sol-include @pod-os/elements"
+        data-objects="auth:pod-os"
 ></script>
 
-<sol-login issuers="https://solidcommunity.net,https://solidweb.me,https://solidweb.org"></sol-login>
+<pos-app>
+  <pos-login></pos-login>
+  <pos-resource id="pos-priv"><pos-container-contents></pos-container-contents></pos-resource>
+  <sol-include id="swc-priv" raw></sol-include>
+</pos-app>
 
-<sol-include id="swc-priv" raw></sol-include>
-<pos-app><pos-resource id="pos-priv"></pos-resource></pos-app>
-
-<!-- On login, point swc at /private/. PodOS (@pod-os/elements) is loaded only
-     now — not via data-components — so <pos-app> isn't live during sol-login's
-     redirect (else the two OIDC clients collide; RFC 9207 iss mismatch). -->
+<!-- PodOS owns the login. On sign-in, point PodOS at /private/ (its own session),
+     and point swc's <sol-include> at it once the broker has adopted PodOS's fetch
+     (both react to pod-os:loaded, so swc waits to avoid a 401 race). -->
 <script type="module">
-  let posReady;
-  document.addEventListener('sol-login', (e) => {
-    const priv = new URL(e.detail.webId).origin + '/private/';
-    document.getElementById('swc-priv').setAttribute('source', priv);
-    posReady = posReady || window.ComponentInterop.load('@pod-os/elements');
-    posReady.then(() => document.getElementById('pos-priv').setAttribute('uri', priv));
+  const adopted = () => typeof window.SolidWebComponents?.adoptedFetch === 'function';
+  document.addEventListener('pod-os:loaded', (e) => {
+    e.detail.os.observeSession().subscribe((s) => {
+      if (!s.isLoggedIn || !s.webId) return;
+      const priv = new URL(s.webId).origin + '/private/';
+      document.getElementById('pos-priv').setAttribute('uri', priv);
+      (function go() {
+        adopted() ? document.getElementById('swc-priv').setAttribute('source', priv)
+                  : setTimeout(go, 20);
+      })();
+    });
   });
 </script></xmp>
