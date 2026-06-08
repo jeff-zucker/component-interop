@@ -3,16 +3,16 @@ h2  { margin-bottom: 0; }
 xmp { margin-top: 0; }
 </style>
 
-<xmp><script src="../component-interop.js"
+<b>1. Import the **data-edit-shape** attribute but nothing else from Sol-Components</b>
+<pre><code>&lt;script src="../component-interop.js"
         data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
         data-components="@pod-os/elements"
-        data-attributes="data-edit-shape"
-></script>
+        <b>data-attributes="data-edit-shape"</b>
+>&lt;/script></code></pre>
 
-<!-- PodOS shows the record; the data-edit-* attributes on the SAME element put
-     an edit pencil (✏️) on it. Clicking the pencil opens a modal form from the shape. -->
-<pos-app>
+<b>2. Add the data-edit-shape and related attribute to a PodOS element; they should point to the RDF subject of the element and to a SHACL shape that describes the RDF.
+<xmp><pos-app>
   <pos-resource uri="sample-profile.ttl#me"
                 data-edit-shape="profile.shape.ttl"
                 data-subject="sample-profile.ttl#me"
@@ -21,7 +21,10 @@ xmp { margin-top: 0; }
     <pos-label></pos-label>
     <pos-literals></pos-literals>
   </pos-resource>
-</pos-app>
+</pos-app></xmp>
+
+<b>3. Listen for PodOS data loading, capture its store</b>
+<xmp>
 <script>
   // PodOS needs an absolute IRI; resolve pos-resource's uri against the page.
   var posRes = document.querySelector('pos-resource');
@@ -33,7 +36,9 @@ xmp { margin-top: 0; }
   document.addEventListener('pod-os:loaded', function (e) {
     podStore = e.detail && e.detail.os && e.detail.os.store && e.detail.os.store.internalStore;
   });
-
+</xmp>
+<b>4. Listen for the Sol-Component editor closing, refresh the display.</b>
+<xmp>
   // On modal close: clear the record's stale triples from PodOS's store (its
   // fetch merges rather than replaces), then re-fetch once so the edit shows.
   document.addEventListener('sol-close', async function () {
