@@ -73,9 +73,15 @@ page directly, e.g. `…/solpos/query.html`).
 
 ## Two caveats
 
-- **Shared Navigation is one-way** (swc drives → PodOS follows). The reverse
-  (navigate in PodOS → swc follows) is parked in
-  `../../claude/investigations/two-way-resource-channel.md`.
+- **Shared Navigation is one-way** (swc drives → PodOS follows). The interop
+  channel is actually two-way (both libraries declare `provides` + `accepts` for
+  `navigation`, verified with synthetic events), but the *reverse* needs the host
+  app's **router**: PodOS's `<pos-resource>` only reloads on a `uri` change and a
+  full PodOS app supplies that via page-level routing. Embedded here without a
+  router, a click in the PodOS panel never re-points `pos-resource` or emits
+  `pod-os:resource-loaded`, so there's nothing to mirror back — a PodOS routing
+  limitation, not an interop one. (Details:
+  `../../claude/investigations/two-way-resource-channel.md`.)
 - **Auth flows PodOS → swc, not the other way.** In **Shared Auth**, PodOS owns the
   login and *provides* its `authenticatedFetch`, which swc *adopts* via `adoptFetch` (its
   fetch resolver honors a foreign fetch) — so a swc component reads `/private/` on PodOS's
