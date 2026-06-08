@@ -8,7 +8,8 @@
 
   <!-- The shell's tabs use data-handler (a sol-components capability), so it loads
        sol-components' manifest from the CDN; one interop:activate listener swaps the
-       panel. Every tab is a self-contained page in an iframe. -->
+       panel. Every tab is a self-contained page in an iframe — except Shared
+       Auth, which opens top-level (OIDC login can't run framed). -->
   <script src="../component-interop.js"
           data-stage="auto"
           data-manifest="sol-components.manifest.json"
@@ -93,7 +94,15 @@
   <iframe data-src="query.html" title="Query demo" loading="lazy"></iframe>
 </div>
 <div role="tabpanel" id="panel-auth"  aria-labelledby="tab-auth" hidden>
-  <iframe data-src="auth.html"  title="Shared Auth demo"  loading="lazy"></iframe>
+  <!-- No iframe: an OIDC login redirect can't complete inside a cross-origin
+       iframe (the IdP's session cookies/storage are blocked in third-party
+       context), so the Shared Auth demo runs top-level as its own page. -->
+  <div class="intro">
+    <p>The Shared Auth demo signs you in against a real Solid identity provider.
+       A login redirect can’t complete inside an iframe, so this demo opens as its
+       own page:</p>
+    <p><a href="auth.html">Open the Shared Auth demo →</a></p>
+  </div>
 </div>
 <div role="tabpanel" id="panel-authoring" aria-labelledby="tab-authoring" hidden>
   <iframe data-src="authoring.html" title="Authoring for Component Interop" loading="lazy"></iframe>

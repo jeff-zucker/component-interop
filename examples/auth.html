@@ -40,11 +40,16 @@
     .col h2 { font-size: 1.05rem; margin: 0 0 .25rem; }
     .col .cap { margin: 0 0 1rem; color: #555; font-size: 1rem; }
     code { background: #e7e9f5; color: #1a1a1a; padding: 0 .25rem; border-radius: 3px; }
+    /* Pre-login pos-resource has no uri → PodOS renders a "something went wrong"
+       error box. Hide it until the script sets uri on sign-in. */
+    pos-resource:not([uri]) { display: none; }
     sol-include, pos-container-contents { display: block; max-height: 14em; overflow: auto; }
     sol-include[raw] { white-space: pre-wrap; font: 1rem/1.4 ui-monospace, monospace; }
   </style>
 </head>
 <body>
+
+<p><a href="index.html">← Back to the demos</a></p>
 
 <div class="intro">
 The demo below shows PodOS and Sol-Components both pointed at a /private folder.  Use the PodOS's login button and see that you also gain access via Sol-Components because the two libraries are sharing PodOS's rdflib store.
