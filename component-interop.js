@@ -274,26 +274,37 @@
     return toList(ds.manifest);
   }
 
+  // SYNCHRONOUS by design. The import map ci builds from these manifests has to be
+  // injected before the parser yields past the loader's blocking <head> script: an
+  // import map added after any module load/preload has started is rejected (Firefox
+  // enforces this strictly; Chromium is lenient). So we fetch the manifests with a
+  // blocking same-origin XHR and inject the map in the same synchronous pass, while
+  // no module has loaded yet — manifests are required same-origin anyway.
+  function fetchJsonSync(url) {
+    try {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', url, false);   // false → synchronous
+      xhr.send(null);
+      if (xhr.status >= 200 && xhr.status < 300) return JSON.parse(xhr.responseText);
+      console.error('[component-interop] manifest ' + url + ': HTTP ' + xhr.status);
+    } catch (err) {
+      console.error('[component-interop] manifest ' + url + ': ' + ((err && err.message) || err));
+    }
+    return null;
+  }
+
   function loadManifests() {
-    var urls = manifestEntries();
-    if (!urls.length) return Promise.resolve();
-    return Promise.all(urls.map(function (u) {
+    manifestEntries().forEach(function (u) {   // in order → first wins
       var abs;
       try { abs = new URL(u, base).href; }
-      catch (x) { console.warn('[component-interop] bad manifest URL: ' + u); return null; }
-      if (abs.indexOf(location.origin + '/') !== 0 && abs !== location.origin) {
-        var o; try { o = new URL(abs); } catch (x) { o = null; }
-        if (!o || o.origin !== location.origin) {
-          console.error('[component-interop] data-manifest must be same-origin — ignored: ' + u);
-          return null;
-        }
+      catch (x) { console.warn('[component-interop] bad manifest URL: ' + u); return; }
+      var o; try { o = new URL(abs); } catch (x) { o = null; }
+      if (!o || o.origin !== location.origin) {
+        console.error('[component-interop] data-manifest must be same-origin — ignored: ' + u);
+        return;
       }
-      return fetch(abs)
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
-        .then(function (m) { return { m: m, url: abs }; })
-        .catch(function (err) { console.error('[component-interop] manifest ' + u + ': ' + err.message); return null; });
-    })).then(function (results) {
-      results.forEach(function (r) { if (r && r.m) mergeManifest(r.m, r.url); });   // in order → first wins
+      var m = fetchJsonSync(abs);
+      if (m) mergeManifest(m, abs);
     });
   }
 
@@ -491,19 +502,21 @@
     else fn();
   }
 
-  // Load chain: fetch manifest(s), inject importmap, broker, import the
-  // `data-components`, then (at DOM-ready) load the `data-attributes` that are both
-  // named on the tag and present in the DOM.
+  // Load chain. The first three steps run SYNCHRONOUSLY inside the loader's blocking
+  // <head> script — fetch manifest(s), inject the importmap, install the broker —
+  // so the map is registered before the parser yields and before any module load
+  // starts (or Firefox rejects it). The dynamic imports then run async: the
+  // `data-objects` consumers first, then `data-components`, then (at DOM-ready) the
+  // `data-attributes` both named on the tag and present in the DOM.
   var auto = (ds.components || ds.load || '').trim();
-  loadManifests().then(function () {
-    ensureImportmap();
-    installInterop();   // before load(): so listeners catch provider events that
-                        // fire while a library's modules import
-    return loadObjects(ds.objects);   // consumer code first, before providers boot
-  }).then(function () {
-    return load(auto);
-  }).then(function () {
-    announce();
-    whenDomReady(autoLoadAttributes);
-  });
+  loadManifests();    // sync (XHR): merge manifests → imports
+  ensureImportmap();  // sync: inject the map now, ahead of every module load
+  installInterop();   // before load(): so listeners catch provider events that
+                      // fire while a library's modules import
+  loadObjects(ds.objects)             // consumer code first, before providers boot
+    .then(function () { return load(auto); })
+    .then(function () {
+      announce();
+      whenDomReady(autoLoadAttributes);
+    });
 })();
