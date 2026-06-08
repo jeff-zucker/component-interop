@@ -24,9 +24,9 @@ This zero-dependency, tiny (17kb) library is component-agnostic - any web compon
   * in some cases, one can use attributes from a foreign library without importing the full component
 * is explicit - what a page draws from each library is named in its script tag (data-components, data-objects, data-attributes); nothing wires implicitly
 
-### Check out  the [demo](examples/index.html)!
+### Check out  the [demo](https://jeff-zucker.github.io/component-interop/examples/index.html)!
 
-### Visit the [documentation](help/index.md)!
+### Visit the [documentation](https://jeff-zucker.github.io/component-interop/help/index.html)!
 
 ### Transparency
 
