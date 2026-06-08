@@ -10,15 +10,18 @@
         href="https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.css"
   >
 
-  <!-- component-interop loads PodOS (its descriptor) and Solid Web Components (its
-       manifest). data-components loads swc's <sol-login> + <sol-include> (plain
-       components). Logging in with sol-login establishes the session both sides try
-       to read your pod's /private/ with. -->
+  <!-- component-interop loads both manifests; data-components loads swc's
+       <sol-login> + <sol-include>. Logging in with sol-login establishes the
+       session both sides try to read your pod's /private/ with.
+       PodOS (@pod-os/elements) is loaded LATER, by the sol-login handler below —
+       NOT here — so that <pos-app> isn't live during sol-login's OIDC redirect.
+       If it were, PodOS would try to process sol-login's redirect and throw
+       (RFC 9207: iss mismatch). Deferring its load sidesteps that collision. -->
   <link rel="view-code" href="auth.modal.html">
   <script src="../component-interop.js"
           data-stage="auto"
           data-manifest="sol-components.manifest.json pod-os.manifest.json"
-          data-components="sol-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
+          data-components="sol-components/core/inrupt-global.js sol-login sol-include"
           data-objects="auth"
   ></script>
 
@@ -88,10 +91,33 @@
   outside fetch, and swc's login patches rdflib's <code>Fetcher</code> (not global <code>fetch</code>).
   So the swc side is the reliable proof that the session is shared; the PodOS side may still prompt
   for its own login depending on how it fetches. component-interop wires what each library
-  <em>declares</em> — it can't reach past an API a library doesn't offer.
+  <em>declares</em> — it can't reach past an API a library doesn't offer. (PodOS is loaded only
+  <em>after</em> sol-login finishes, so the two OIDC clients don't fight over the sign-in redirect;
+  for the reverse — PodOS owning the login and swc adopting it — see the <strong>Adopted Auth</strong> tab.)
 </p>
 
 <script type="module">
+  // Local testing only: offer the local authed CSS (claude/dev-idp, port 3005) as
+  // a sol-login issuer. Guarded to localhost so it never appears on the deployed
+  // demo. Start it with `bash claude/dev-idp/run-idp.sh` (login test@example.com /
+  // secret!) — the public issuers above are CSS/Pivot and currently fail at the
+  // OIDC authorize step.
+  if (location.hostname === 'localhost') {
+    customElements.whenDefined('sol-login').then(() => {
+      document.querySelector('sol-login')?.addIssuer('http://localhost:3005/');
+    });
+  }
+
+  // PodOS is loaded on demand here (not via data-components) so <pos-app> is not
+  // live during sol-login's redirect. We load it once, only after the first
+  // successful sol-login — by then swc's OIDC client has consumed and cleared the
+  // redirect params, so PodOS boots clean instead of choking on them.
+  let posReady;
+  function showPosPrivate(priv) {
+    posReady = posReady || window.ComponentInterop.load('@pod-os/elements');
+    posReady.then(() => document.getElementById('pos-priv').setAttribute('uri', priv));
+  }
+
   // On login, derive the pod root from the WebID origin and point both libraries
   // at /private/ on that pod. sol-include reloads on `source` change; pos-resource
   // reloads on `uri` change.
@@ -103,12 +129,12 @@
     catch (_) { return; }
     document.getElementById('status').textContent = `Signed in as ${webId} — loading ${priv}`;
     document.getElementById('swc-priv').setAttribute('source', priv);
-    document.getElementById('pos-priv').setAttribute('uri', priv);
+    showPosPrivate(priv);
   });
   document.addEventListener('sol-logout', () => {
     document.getElementById('status').textContent = 'Signed out.';
     document.getElementById('swc-priv').removeAttribute('source');
-    document.getElementById('pos-priv').removeAttribute('uri');
+    document.getElementById('pos-priv')?.removeAttribute('uri');
   });
 </script>
 

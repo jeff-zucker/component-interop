@@ -6,7 +6,7 @@ xmp { margin-top: 0; }
 <xmp><script src="../component-interop.js"
         data-stage="auto"
         data-manifest="sol-components.manifest.json pod-os.manifest.json"
-        data-components="sol-components/core/inrupt-global.js sol-login sol-include @pod-os/elements"
+        data-components="sol-components/core/inrupt-global.js sol-login sol-include"
         data-objects="auth"
 ></script>
 
@@ -15,11 +15,15 @@ xmp { margin-top: 0; }
 <sol-include id="swc-priv" raw></sol-include>
 <pos-app><pos-resource id="pos-priv"></pos-resource></pos-app>
 
-<!-- on login, point both at the pod's /private/ -->
+<!-- On login, point swc at /private/. PodOS (@pod-os/elements) is loaded only
+     now — not via data-components — so <pos-app> isn't live during sol-login's
+     redirect (else the two OIDC clients collide; RFC 9207 iss mismatch). -->
 <script type="module">
+  let posReady;
   document.addEventListener('sol-login', (e) => {
     const priv = new URL(e.detail.webId).origin + '/private/';
     document.getElementById('swc-priv').setAttribute('source', priv);
-    document.getElementById('pos-priv').setAttribute('uri', priv);
+    posReady = posReady || window.ComponentInterop.load('@pod-os/elements');
+    posReady.then(() => document.getElementById('pos-priv').setAttribute('uri', priv));
   });
 </script></xmp>

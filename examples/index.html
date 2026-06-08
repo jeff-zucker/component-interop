@@ -65,6 +65,8 @@
 
   <button role="tab" id="tab-auth"       data-handler="auth"       aria-controls="panel-auth"       aria-selected="false" tabindex="-1">Shared<br>Auth</button>
 
+  <button role="tab" id="tab-auth-adopt" data-handler="auth-adopt" aria-controls="panel-auth-adopt" aria-selected="false" tabindex="-1">Adopted<br>Auth</button>
+
   <button role="tab" id="tab-interop"    data-handler="interop"    aria-controls="panel-interop"    aria-selected="false"  tabindex="-1">Clickable<br>Components</button>
 
   <button role="tab" id="tab-query"      data-handler="query"      aria-controls="panel-query"      aria-selected="false" tabindex="-1">SPARQL<br>Anywhere</button>
@@ -95,6 +97,9 @@
 <div role="tabpanel" id="panel-auth"  aria-labelledby="tab-auth" hidden>
   <iframe data-src="auth.html"  title="Auth demo"  loading="lazy"></iframe>
 </div>
+<div role="tabpanel" id="panel-auth-adopt" aria-labelledby="tab-auth-adopt" hidden>
+  <iframe data-src="auth-adopt.html" title="Adopted Auth demo" loading="lazy"></iframe>
+</div>
 <div role="tabpanel" id="panel-authoring" aria-labelledby="tab-authoring" hidden>
   <iframe data-src="authoring.html" title="Authoring for Component Interop" loading="lazy"></iframe>
 </div>
@@ -114,7 +119,7 @@
 
   // Match the on-screen tab order (the tablist DOM order) so arrow keys / Home /
   // End move left-to-right as displayed.
-  const order = ['intro', 'navigation', 'store', 'auth', 'interop', 'query', 'forms', 'authoring'];
+  const order = ['intro', 'navigation', 'store', 'auth', 'auth-adopt', 'interop', 'query', 'forms', 'authoring'];
   const tab   = (k) => document.getElementById('tab-' + k);
   const panel = (k) => document.getElementById('panel-' + k);
 

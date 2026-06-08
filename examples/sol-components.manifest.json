@@ -26,7 +26,8 @@
         "module": "sol-components/core/rdf.js"
       },
       "auth": {
-        "call": "adoptFetch"
+        "call": "adoptFetch",
+        "module": "sol-components/core/services.js"
       }
     },
     "accepts": {
