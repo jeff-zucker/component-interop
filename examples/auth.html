@@ -46,17 +46,9 @@
 </head>
 <body>
 
-<button type="button" class="view-code-btn">View code</button>
-
-<h1>Shared Auth — one login, shared across two libraries</h1>
-
 <div class="intro">
-  <strong>PodOS owns the login</strong>: sign in with PodOS's <code>&lt;pos-login&gt;</code> (there is
-  no <code>&lt;sol-login&gt;</code> on this page). component-interop wires the auth channel from PodOS
-  to Solid Web Components (<code>data-objects="auth:pod-os"</code>), so swc's
-  <code>&lt;sol-include&gt;</code> <em>adopts</em> PodOS's authenticated fetch and reads
-  <strong>your pod's <code>/private/</code></strong> with it — the same session, used by components
-  from both libraries.
+The demo below shows PodOS and Sol-Components both pointed at a /private folder.  Use the PodOS's login button and see that you also gain access via Sol-Components because the two libraries are sharing PodOS's rdflib store.
+<button type="button" class="view-code-btn">View code</button>
 </div>
 
 <pos-app>
@@ -83,15 +75,6 @@
     </div>
   </div>
 </pos-app>
-
-<p class="note" id="caveat">
-  How it works: PodOS <em>provides</em> auth (<code>pod-os:loaded → authenticatedFetch</code>) and
-  swc <em>consumes</em> it (<code>adoptFetch</code>). swc's fetch resolver honors an adopted foreign
-  fetch, so the broker can hand PodOS's session straight into <code>&lt;sol-include&gt;</code>. The
-  swc column reading your private data is the proof — no swc login UI is present. (The reverse —
-  swc's <code>&lt;sol-login&gt;</code> sharing <em>to</em> PodOS — isn't possible: PodOS exposes no
-  hook to adopt an outside fetch, so auth flows PodOS → swc, not the other way.)
-</p>
 
 <script type="module">
   // PodOS owns the session. On `pod-os:loaded` we get the `os` instance; observe
