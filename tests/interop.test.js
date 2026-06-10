@@ -557,12 +557,13 @@ test('accepts: with no transform the raw provided value is written (hash kept)',
   assert.equal(ctx.document.querySelector('#raw').getAttribute('resource'), 'http://pod/a#frag', 'no transform → hash preserved');
 });
 
-test('security: a cross-origin data-manifest is refused', requireJsdom(), async () => {
+test('a cross-origin data-manifest is accepted (CORS permitting)', requireJsdom(), async () => {
   const ctx = loadCI({
-    dataset: { manifest: 'http://evil.example/m.manifest.json' },
-    fetchMap: { 'http://evil.example/m.manifest.json': { name: 'evil', components: { x: 'x.js' } } },
+    dataset: { manifest: 'http://other.example/m.manifest.json', stage: 'local' },
+    fetchMap: { 'http://other.example/m.manifest.json': { name: 'remote', stages: { local: { components: { 'x-el': './x.js' } } } } },
   });
   await ctx.api.ready;
-  assert.ok(ctx.logs.error.some((m) => m.includes('same-origin')), 'cross-origin manifest rejected');
-  assert.equal(ctx.api.importmap, undefined, 'nothing from the cross-origin manifest was applied');
+  assert.ok(!ctx.logs.error.some((m) => m.includes('same-origin')), 'no same-origin rejection');
+  assert.ok(ctx.api.importmap && ctx.api.importmap['x-el'], 'the cross-origin manifest contributed to the importmap');
+  assert.equal(ctx.api.importmap['x-el'], 'http://other.example/x.js', 'its relative URL resolved against the manifest origin');
 });

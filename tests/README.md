@@ -44,4 +44,4 @@ npm install -g jsdom      # global — keeps this repo clean
   provide→consume wiring, `pickProvider` (prefer / `from` / priority / manifest
   order), the `data-objects`/`data-attributes` opt-in gates and the `key:provider`
   inline host, the resource channel, `load()` + auto-load, the lifecycle
-  events, and same-origin manifest security.
+  events, and cross-origin manifest loading (CORS-permitting).

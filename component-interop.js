@@ -7,44 +7,41 @@
  * manifest, and this broker pairs providers to consumers and loads their modules.
  *
  *   <script src="component-interop.js"
- *           data-stage="local"
- *           data-components="my-widgets"
- *           data-manifest="other-lib.manifest.json"></script>
+ *           data-manifest="my-lib.manifest.json other-lib.manifest.json"
+ *           data-components="my-widget"
+ *           data-objects="store"></script>
  *
- * On load it (1) reads the `data-manifest` URLs; (2) injects an
- * importmap built from the manifests' `components` (stage chosen by `data-stage`);
- * (3) `import()`s the `data-components` modules (or all, with `data-components="*"`);
- * (4) brokers the libraries' `objects` blocks; (5) at DOM-ready, loads any
- * `attributes` entry the page both names in `data-attributes` and uses in the DOM;
- * then fires `interop:ready`.
+ * On load it (1) reads the `data-manifest` URLs; (2) `import()`s the modules named
+ * in `data-components` (or all, with `data-components="*"`); (3) brokers the
+ * libraries' `objects` blocks — pairing each opted-in consumer with a provider;
+ * (4) at DOM-ready, loads any `attributes` entry the page both names in
+ * `data-attributes` and uses in the DOM; then fires `interop:ready`.
  *
  * The opt-in invariant: nothing ci activates that the script tag doesn't name —
  * components in `data-components`, shared objects in `data-objects`, attributes in
- * `data-attributes`. (Transitive deps — `shared-modules`, a bundle's internals —
- * still load on demand; those are plumbing, not offerings.)
+ * `data-attributes`. The tag is the full inventory of what links.
  *
- * A manifest's OFFERINGS (read these to use the library): `components` (elements to
- * place), `attributes` (data-* you can use, loaded when named + present), `objects`
- * (values shared with other libraries). Its PLUMBING: `shared-modules` (deps it
- * externalizes by name, so peers dedupe — the dep-sharing contract) and `bundles`
- * (logical, NOT physical, module groups an attribute can point at).
- *   { "name": "…",                                            // library identity (required for sharing)
- *     "components":     { "my-el": url, … },                  // placeable elements → URL (data-components / "*")
- *     "shared-modules": { "rdflib": url, … },                 // externalized deps → URL (importmap, deduped)
- *     "bundles":        { "rdf": ["solid-ui", "sol-form", …] },// a name → module specifiers (logical group)
- *     "stages": { "local": {"components":{…},"shared-modules":{…}}, "cdn": {…} },
- *     "attributes": { "data-x": "./mod.js",                   // a data-* → module specifier(s) or a bundle name
- *                     "data-a data-b": "rdf" },               // (space-separated keys share modules)
+ * A manifest's OFFERINGS — read these to use the library:
+ *   `components` — placeable elements, loaded by `data-components` (or `"*"`).
+ *   `attributes` — `data-*` you can use, loaded when named AND present in the DOM.
+ *   `objects`    — values shared with other libraries (a store, an auth fetch, …).
+ *   { "name": "…",                                  // library identity (required for sharing)
+ *     "components": { "my-el": "./my-el.js" },       // placeable elements → module (URL or bare specifier)
+ *     "attributes": { "data-x": "./mod.js",          // a data-* → module specifier(s) or a bundle name
+ *                     "data-a data-b": "rdf" },       // (space-separated keys share modules)
+ *     "bundles":    { "rdf": ["solid-ui", "sol-form"] }, // a name → module specifiers (logical group)
  *     "objects": {
  *       "provides": { key: { service|respondTo: "…", sendValue: "…", priority?: n } }, // offer a value (service or event; respondTo may be a list)
- *       "consumes": { key: { call: "<registered-consumer>", from?: "<lib>", module?: "<spec>" } }, // adopt it by calling a handler (module: code to eager-load for data-objects)
+ *       "consumes": { key: { call: "<registered-consumer>", from?: "<lib>", module?: "<spec>" } }, // adopt it by calling a handler (module: code eager-loaded for data-objects)
  *       "accepts":  { key: { onElement: "…", applyValueTo: "…", transform?: "stripHash" } } } } // adopt it by setting a DOM attribute
- * Relative import URLs resolve against THAT manifest's URL. The earlier manifest
- * wins a conflicting specifier (so a shared dep stays single). The broker pairs a
- * `consumes` OR `accepts` key with ANOTHER library's `provides` key of the same
- * name (the adopt rule) — but ONLY for keys the page lists in `data-objects`, so
- * nothing cross-wires until the page names it. A page mixing libraries needs no
- * bridge script, just the opt-in; the tag is the full inventory of what links.
+ *
+ * A module specifier resolves against THAT manifest's URL when relative/absolute
+ * (`./…`, `/…`, `https://…`) and is import()ed directly; a bare specifier (e.g.
+ * "solid-logic") is left for an import map to resolve (see the import-map section at
+ * the end). The broker pairs a `consumes` OR `accepts` key with ANOTHER library's
+ * `provides` key of the same name (the adopt rule) — but ONLY for keys the page lists
+ * in `data-objects`, so nothing cross-wires until the page names it. A page mixing
+ * libraries needs no bridge script, just the opt-in.
  *
  * A `consumes.call` names a handler the consuming library registered via
  * `ComponentInterop.registerConsumer(name, fn)` — the broker invokes the
@@ -59,12 +56,12 @@
  * `key:provider` e.g. "store:pod-os", which also sets the provider preference —
  * one token saying opt-in AND from-whom), data-attributes (the manifest `data-*`
  * keys this page opts into — each loads only when named here AND present in the DOM;
- * no list → no attribute loads),
- * data-stage (`local`|`cdn`|`auto` — auto picks local on localhost/file:, cdn
- * elsewhere), data-manifest (SAME-ORIGIN URLs to merge), data-importmap-extra
- * (inline importmap JSON), data-base (resolve data-manifest paths), data-prefer
- * (JSON map key→preferred provider library, for multi-library pages; an explicit
- * data-prefer wins over a `key:provider` inline host in data-objects).
+ * no list → no attribute loads), data-manifest (manifest URLs to merge; cross-origin
+ * allowed when the server sends CORS), data-base (resolve data-manifest paths),
+ * data-prefer (JSON map key→preferred provider library, for multi-library pages; an
+ * explicit data-prefer wins over a `key:provider` inline host in data-objects).
+ * (data-stage and data-importmap-extra relate to the optional import map — see the
+ * end section.)
  *
  * API on window.ComponentInterop: ready (Promise), load(components), manifest,
  * loaded, version, registerCapability("data-x", modules),
@@ -73,6 +70,28 @@
  * importing each other; .has(name) / .capabilities; .on(name,fn) / .emit(name,detail).
  * Fires `interop:ready`, `interop:capability` (per capability), `interop:wired`
  * (per provide→consume binding). Zero dependencies.
+ *
+ * ── Optional: using the manifest to supply an import map (and why) ──────────────
+ * A manifest can ALSO carry an import map, so libraries reference their deps by bare
+ * specifier instead of hard-coding URLs:
+ *   "shared-modules": { "rdflib": "./vendor/rdflib.js", … }  // externalized deps → URL
+ *   "components":     { "my-el": "./my-el.js", … }           // component URLs also feed the map
+ *   "stages": { "local": { "shared-modules": {…} },          // optional per-env URL sets,
+ *               "cdn":   { "shared-modules": {…} } }          //   chosen by data-stage
+ * ci merges every manifest's entries FIRST-WINS into ONE `<script type="importmap">`
+ * and injects it synchronously, before any module loads (a map added after a module
+ * load is rejected — Firefox strict, Chromium lenient). `data-stage`
+ * (`local`|`cdn`|`auto` — auto = local on localhost/file:, else cdn) picks the stage;
+ * `data-importmap-extra` adds inline entries. If the page already owns an
+ * `<script type="importmap">`, ci yields to it.
+ *
+ * Why you'd want it: bare specifiers stay location-flexible (swap dev↔CDN by editing
+ * only the map/stage), and the union of every library's externalized deps is
+ * collected and DEDUPED to one instance automatically (one rdflib) instead of each
+ * app hand-authoring and reconciling a map. When you DON'T need it: reference modules
+ * by relative/absolute URL in the manifest and ci imports them directly — no map.
+ * (Bare runtime deps a library imports internally still need an import map — ci's or
+ * a page-owned one — regardless; that part isn't ci-specific.)
  */
 (function () {
   'use strict';
@@ -268,18 +287,19 @@
     }
   }
 
-  // The manifests to merge: the SAME-ORIGIN data-manifest URLs — each names the
-  // modules the loader will import().
+  // The manifests to merge: the data-manifest URLs — each names the modules the
+  // loader will import().
   function manifestEntries() {
     return toList(ds.manifest);
   }
 
-  // SYNCHRONOUS by design. The import map ci builds from these manifests has to be
-  // injected before the parser yields past the loader's blocking <head> script: an
-  // import map added after any module load/preload has started is rejected (Firefox
-  // enforces this strictly; Chromium is lenient). So we fetch the manifests with a
-  // blocking same-origin XHR and inject the map in the same synchronous pass, while
-  // no module has loaded yet — manifests are required same-origin anyway.
+  // SYNCHRONOUS by design. When a manifest carries an import map, ci has to inject it
+  // before the parser yields past the loader's blocking <head> script: an import map
+  // added after any module load/preload has started is rejected (Firefox enforces this
+  // strictly; Chromium is lenient). So we fetch each manifest with a blocking XHR and
+  // inject the map in the same synchronous pass, while no module has loaded yet. A
+  // cross-origin manifest is allowed, but — like any cross-origin fetch — loads only if
+  // that server sends CORS headers; otherwise it's skipped (logged below).
   function fetchJsonSync(url) {
     try {
       var xhr = new XMLHttpRequest();
@@ -298,11 +318,6 @@
       var abs;
       try { abs = new URL(u, base).href; }
       catch (x) { console.warn('[component-interop] bad manifest URL: ' + u); return; }
-      var o; try { o = new URL(abs); } catch (x) { o = null; }
-      if (!o || o.origin !== location.origin) {
-        console.error('[component-interop] data-manifest must be same-origin — ignored: ' + u);
-        return;
-      }
       var m = fetchJsonSync(abs);
       if (m) mergeManifest(m, abs);
     });

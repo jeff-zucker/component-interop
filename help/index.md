@@ -19,16 +19,17 @@ complete inventory of what the page uses and what cross-wires.
 
 ```html
 <script src="component-interop.js"
-        data-stage="local"
-        data-components="my-widgets"
-        data-manifest="other-lib.manifest.json"></script>
+        data-manifest="my-lib.manifest.json other-lib.manifest.json"
+        data-components="my-widget"
+        data-objects="store"></script>
 ```
 
 It is a classic script (no build step needed), exposes `window.ComponentInterop`, and has **no
 runtime dependencies**. Load it as a **plain blocking `<script>` in `<head>`** — not `async`,
-`defer`, or `type="module"`. It reads the manifests and injects its importmap synchronously,
-before the parser moves on, because an importmap added after any module load has started is
-rejected (Firefox enforces this strictly; Chromium is lenient).
+`defer`, or `type="module"`. It reads the manifests and brokers the libraries. (If a manifest also
+supplies an import map, ci injects it synchronously before the parser moves on — see
+[Using the manifest for import maps](#using-the-manifest-for-import-maps-optional) — because a map
+added after any module load has started is rejected.)
 
 ## What it does
 
@@ -36,8 +37,8 @@ A manifest's **offerings** — what you read to use a library — are **componen
 to place), **attributes** (a `data-*` you use), and **objects** (a value shared
 library→library):
 
-1. **components** — injects an importmap from the manifests' `components` +
-   `shared-modules`, then `import()`s the `data-components` (or `"*"` for all).
+1. **components** — `import()`s the modules named in `data-components` (or `"*"` for all). Each
+   resolves against its manifest's URL if relative/absolute, or via an import map if a bare specifier.
 2. **attributes** — a manifest-declared `data-*` loads its module(s) (or `bundle`) when the page
    **both** names it in `data-attributes` **and** uses it in the DOM. Named-but-unused loads
    nothing; used-but-unnamed loads nothing.
@@ -50,19 +51,15 @@ library→library):
 
 ## The manifest
 
-Offerings (read these to use the library) — `components`, `attributes`, `objects`; plumbing
-(only a co-author wiring shared deps reads these) — `shared-modules`, `bundles`:
+Offerings (read these to use the library) — `components`, `attributes`, `objects`; `bundles` is a
+logical module-grouping helper. (A manifest can ALSO carry an import map — `shared-modules`/`stages` —
+but that's optional; see [Using the manifest for import maps](#using-the-manifest-for-import-maps-optional).)
 
 ```jsonc
 {
   "name": "my-lib",                                   // library identity (required for sharing)
-  "components":     { "my-widget": "./my-widget.js" },// placeable elements → URL (data-components / "*")
-  "shared-modules": { "rdflib": "./vendor/rdflib.js" },// deps externalized by name (importmap, deduped)
+  "components":     { "my-widget": "./my-widget.js" },// placeable elements → module (URL or bare specifier)
   "bundles":        { "editing": ["solid-ui", "my-form"] }, // a logical module group
-  "stages": {                                         // optional: pick with data-stage
-    "local": { "components": {…}, "shared-modules": { "dep": "./vendor/dep.js" } },
-    "cdn":   { "components": {…}, "shared-modules": { "dep": "https://esm.sh/dep" } }
-  },
   "attributes": {                                     // a data-* → its module(s) or a bundle name (page opts in via data-attributes)
     "data-login": "./my-login.js",
     "data-edit-shape data-subject": "editing"         // space-separated keys share modules
@@ -113,10 +110,10 @@ store/session/current-resource with no per-pair glue:
 
 Conventions that make N libraries coherent:
 
-1. **Externalize shared deps.** Common deps (rdflib, …) dedupe to one instance via the importmap's
-   first-wins rule — but only if libraries resolve them through the importmap rather than inlining
-   their own copy. A library that bundles its own copy gets a second instance and breaks single-store
-   coherence.
+1. **Externalize shared deps.** Common deps (rdflib, …) must resolve to one instance — share a single
+   resolved URL (via one import map; see [Using the manifest for import maps](#using-the-manifest-for-import-maps-optional))
+   rather than each library inlining its own copy. A library that bundles its own copy gets a second
+   instance and breaks single-store coherence.
 2. **Agree on capability names.** Pairing is by capability *name* — `consumes.rdf` pairs with
    another library's `provides.rdf`. Across ecosystems either agree on names or ship a tiny
    **descriptor manifest** mapping a library's terms to the shared ones (see `examples/solpos/`,
@@ -129,25 +126,60 @@ Conventions that make N libraries coherent:
    See `examples/multi-provider/`.
 4. **Namespace global names.** `registerConsumer` handler names are
    page-global — prefix them (`libA.adoptStore`) so two libraries don't collide.
-5. **Cross-origin libraries.** `data-manifest` URLs must be same-origin (they name modules the loader
-   `import()`s), but the import *targets inside* a manifest may be cross-origin (a CDN). So for
-   libraries on different origins, ship a small **local descriptor manifest** per library that maps
-   its modules to its CDN — again, the `examples/solpos/` pattern.
+5. **Cross-origin libraries.** `data-manifest` may point at a cross-origin manifest (it loads when
+   that server sends CORS headers), and the modules a manifest names can be cross-origin too (a CDN).
+   A small **local descriptor manifest** per library that maps its terms/modules is still handy for
+   adapting a foreign library — the `examples/solpos/` pattern — but it's no longer required just to
+   cross an origin.
 
 ## `data-*` attributes (`data-base`, `data-stage`, …)
 
 - `data-components` — components/bundles to `import()` (or `*` for every component)
 - `data-objects` — object-capability keys to opt into (wires `consumes`/`accepts`; also eager-loads a key's `module`). A token may name its host inline — `key:provider`, e.g. `store:pod-os` — which also sets the provider preference
 - `data-attributes` — manifest `data-*` keys to opt into (a key loads only when named here **and** present in the DOM)
-- `data-stage` — `local` (default) | `cdn` — picks `stages.<stage>` (`components` + `shared-modules`)
-- `data-manifest` — extra **same-origin** manifest URLs (merged after the default; resolved against
-  the page)
+- `data-stage` — `local` | `cdn` | `auto` — picks `stages.<stage>` for the optional import map (see below)
+- `data-manifest` — manifest URLs to merge (after the default; resolved against the page; cross-origin
+  allowed when the server sends CORS)
 - `data-manifest-default="off"` — skip the default sibling `<basename>.manifest.json`
 - `data-importmap-extra` — inline importmap JSON (manifest entries win on conflict)
 - `data-base` — base URL for resolving `data-manifest` paths
 - `data-prefer` — JSON map `key → preferred provider library`, for multi-library pages (wins over a `key:provider` inline host in `data-objects`)
 
 (There is no `data-extend-with` — an attribute loads when it is named in `data-attributes` and used on the page.)
+
+## Using the manifest for import maps (optional)
+
+Everything above works whether or not ci builds an import map: if a manifest references its modules by
+**relative/absolute URL**, ci `import()`s them directly. A manifest can ALSO carry an import map, so
+libraries reference their deps by **bare specifier** instead of hard-coding URLs:
+
+```jsonc
+{
+  "name": "my-lib",
+  "shared-modules": { "rdflib": "./vendor/rdflib.js" },   // externalized deps → URL
+  "components":     { "my-widget": "./my-widget.js" },    // component URLs also feed the map
+  "stages": {                                             // optional per-env URL sets, chosen by data-stage
+    "local": { "shared-modules": { "rdflib": "./vendor/rdflib.js" } },
+    "cdn":   { "shared-modules": { "rdflib": "https://esm.sh/rdflib" } }
+  }
+}
+```
+
+ci merges every manifest's entries **first-wins** into one `<script type="importmap">` and injects it
+**synchronously, before any module loads** (a map added after a module load is rejected — Firefox
+strict, Chromium lenient). `data-stage` (`local`|`cdn`|`auto` — `auto` = local on localhost/`file:`,
+else cdn) picks the stage; `data-importmap-extra` adds inline entries. **If the page already owns an
+`<script type="importmap">`, ci yields to it** and uses that instead.
+
+**Why you'd want it:** bare specifiers stay location-flexible — swap dev↔CDN by editing only the
+map/stage, not every manifest — and the union of every library's externalized deps is collected and
+**deduped to one instance** automatically (one rdflib), instead of each app hand-authoring and
+reconciling a map.
+
+**When you don't need it:** reference modules by relative/absolute URL in the manifest and ci imports
+them directly — no import map at all. (Bare *runtime* deps a library imports **internally** — its own
+`import 'rdflib'` — still need *an* import map, ci's or a page-owned one, regardless; that part isn't
+ci-specific.)
 
 ## API (`window.ComponentInterop`)
 
@@ -159,9 +191,10 @@ capability), `interop:wired` (per provide→consume binding).
 
 ## Security
 
-`data-manifest` URLs must be **same-origin** (they name modules the loader will `import()`); the
-default sibling manifest is trusted even cross-origin. Consumer handlers are invoked from a
-library-provided **registry**, never `eval`'d from a manifest string.
+A manifest names modules ci `import()`s, so point `data-manifest` only at manifests you trust — the
+page author chooses them, and a cross-origin one loads only if that server sends CORS headers.
+Consumer handlers are invoked from a library-provided **registry**, never `eval`'d from a manifest
+string, so a manifest can name a handler but never supply code.
 
 ## Examples
 
