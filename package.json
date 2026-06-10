@@ -1,6 +1,6 @@
 {
   "name": "component-interop",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "A small, zero-dependency capability broker for web components — let independently-authored component libraries share a store, a session, and capabilities without importing each other.",
   "type": "module",
   "main": "component-interop.js",
