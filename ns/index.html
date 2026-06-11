@@ -17,27 +17,23 @@
   "@context": {
     "ci": "https://jeff-zucker.github.io/component-interop/ns#",
     "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "ui": "http://www.w3.org/ns/ui#"
   },
   "@graph": [
     { "@id": "ci:Manifest", "@type": "rdfs:Class",
       "rdfs:label": "Manifest",
-      "rdfs:comment": "A component-interop loader manifest: declares the components, capability attributes, bundles, staged module URLs, and shared-value wiring of one library." },
+      "rdfs:comment": "A component-interop loader manifest: declares the components, capability attributes, staged module URLs, and shared-value wiring of one library." },
     { "@id": "ci:component", "@type": "rdf:Property",
       "rdfs:label": "component",
-      "rdfs:comment": "Links a manifest (or a stage) to a loadable web-component module. The module node carries ci:tagName." },
-    { "@id": "ci:tagName", "@type": "rdf:Property",
-      "rdfs:label": "tagName",
-      "rdfs:comment": "The custom-element tag name (also the import-map specifier) of a component module. Name aligned with the custom-elements-manifest format's tagName field." },
+      "rdfs:comment": "Links a manifest (or a stage) to a component it offers. The value is a ui:Component (declared range): a node carrying ui:name (the custom-element tag — the manifest map key), and optionally ui:label, ui:icon, ui:hoverTitle, ui:attribute defaults, schema:description, dct:conformsTo (SHACL shape), dct:references (data documents), schema:softwareHelp (user help), and ci:module. A string-form entry makes the module IRI itself the node.",
+      "rdfs:range": { "@id": "ui:Component" } },
     { "@id": "ci:sharedModule", "@type": "rdf:Property",
       "rdfs:label": "sharedModule",
       "rdfs:comment": "Links a manifest (or a stage) to a dependency module mapped in the import map. The module node carries schema:name (its bare import specifier)." },
     { "@id": "ci:attribute", "@type": "rdf:Property",
       "rdfs:label": "attribute",
-      "rdfs:comment": "Links a manifest to a data-* capability attribute declaration. The node carries schema:name (the attribute name, e.g. data-from-query) and ci:module (its handler module or bundle name). Distinct from the custom-elements-manifest sense of 'attributes' (a single component's own HTML attributes)." },
-    { "@id": "ci:bundle", "@type": "rdf:Property",
-      "rdfs:label": "bundle",
-      "rdfs:comment": "Links a manifest to a named logical bundle. The node carries schema:name and an ordered rdf:List of ci:module values." },
+      "rdfs:comment": "Links a manifest to a data-* capability attribute declaration. The node carries schema:name (the attribute name, e.g. data-from-query) and ci:module (its handler module). Distinct from the custom-elements-manifest sense of 'attributes' (a single component's own HTML attributes)." },
     { "@id": "ci:stage", "@type": "rdf:Property",
       "rdfs:label": "stage",
       "rdfs:comment": "Links a manifest to a per-environment URL set (e.g. local, cdn). The stage node carries schema:name plus ci:component / ci:sharedModule links." },
@@ -52,7 +48,7 @@
       "rdfs:comment": "Declares a value applied to a DOM element's attribute. The node carries schema:name plus ci:onElement, ci:applyValueTo, ci:transform." },
     { "@id": "ci:module", "@type": "rdf:Property",
       "rdfs:label": "module",
-      "rdfs:comment": "A module specifier, URL, or bundle name (literal): the handler of an attribute, a member of a bundle, or the eager-load of a consumer. Kept as one uniform term rather than borrowing dcterms:hasPart for bundle membership." },
+      "rdfs:comment": "A module reference. The object is either the module resource itself (an IRI — a component entry's resolvable URL) or an import-map specifier (a string literal — e.g. an attribute handler's bare specifier, resolved by the loader through the import map). No formal range is declared because of this deliberate duality; the manifest SHACL shapes constrain it per context." },
     { "@id": "ci:service", "@type": "rdf:Property",
       "rdfs:label": "service",
       "rdfs:comment": "Registry service key a provider exposes the value from." },
@@ -96,27 +92,43 @@ The machine-readable ontology is embedded in this page as
 <code>application/ld+json</code>.
 </p>
 <p>
-Borrowed terms (not minted here):
-<code>schema:name</code> (<a href="https://schema.org/name">schema.org/name</a>)
-names libraries, attributes, bundles, stages, and capability keys — used here
-with exact-identifier semantics, narrower than schema.org's general label;
+Borrowed terms (not minted here; <code>schema:</code> is always
+<code>http://schema.org/</code>):
+<code>schema:name</code> names libraries, attributes, stages, capability keys,
+and attribute-pair names — exact-identifier semantics, narrower than
+schema.org's general label;
+<code>schema:description</code> a component's one-sentence user-facing description;
+<code>schema:softwareHelp</code> a component's USER online help page;
+<code>ui:name</code>, <code>ui:label</code>, <code>ui:icon</code>,
+<code>ui:hoverTitle</code>, <code>ui:attribute</code>
+(<code>http://www.w3.org/ns/ui#</code>, documented in sol-components'
+<code>data/ui-vocab.ttl</code>) — a manifest component is a
+<code>ui:Component</code>, the same shape menus and palettes use, with
+<code>ui:attribute</code> values being <code>schema:PropertyValue</code> pairs;
+<code>dct:conformsTo</code> the SHACL shape a component's data conforms to;
+<code>dct:references</code> the data document(s) it reads/writes;
 <code>rdfs:seeAlso</code> (as the manifest key <code>customElements</code>)
 links a manifest to the library's
 <a href="https://github.com/webcomponents/custom-elements-manifest">custom-elements.json</a>.
 </p>
+<p>
+The manifest format's own SHACL shape:
+<a href="../shapes/manifest.shaclc"><code>shapes/manifest.shaclc</code></a>
+(compact syntax, canonical) /
+<a href="../shapes/manifest.shacl.ttl"><code>shapes/manifest.shacl.ttl</code></a>
+(Turtle, for tooling).
+</p>
 <table>
 <tr><th>Term</th><th>Type</th><th>Definition</th></tr>
-<tr><td><code>ci:Manifest</code></td><td>Class</td><td>A component-interop loader manifest: declares the components, capability attributes, bundles, staged module URLs, and shared-value wiring of one library.</td></tr>
-<tr><td><code>ci:component</code></td><td>Property</td><td>Links a manifest (or a stage) to a loadable web-component module; the module node carries <code>ci:tagName</code>.</td></tr>
-<tr><td><code>ci:tagName</code></td><td>Property</td><td>The custom-element tag name (also the import-map specifier) of a component module. Aligned with the custom-elements-manifest <code>tagName</code> field.</td></tr>
+<tr><td><code>ci:Manifest</code></td><td>Class</td><td>A component-interop loader manifest: declares the components, capability attributes, staged module URLs, and shared-value wiring of one library.</td></tr>
+<tr><td><code>ci:component</code></td><td>Property</td><td>Links a manifest (or a stage) to a component it offers — a <code>ui:Component</code> (declared range) carrying <code>ui:name</code> (the tag) plus optional display metadata (<code>ui:label</code>, <code>ui:icon</code>, <code>ui:hoverTitle</code>, <code>schema:description</code>, <code>ui:attribute</code> defaults, <code>dct:conformsTo</code>, <code>dct:references</code>, <code>schema:softwareHelp</code>, <code>ci:module</code>).</td></tr>
 <tr><td><code>ci:sharedModule</code></td><td>Property</td><td>Links a manifest (or a stage) to a dependency module mapped in the import map; the module node carries <code>schema:name</code> (its bare specifier).</td></tr>
 <tr><td><code>ci:attribute</code></td><td>Property</td><td>Links a manifest to a <code>data-*</code> capability attribute declaration (<code>schema:name</code> + <code>ci:module</code>). Distinct from the custom-elements-manifest sense of a component's own attributes.</td></tr>
-<tr><td><code>ci:bundle</code></td><td>Property</td><td>Links a manifest to a named logical bundle: <code>schema:name</code> + an ordered list of <code>ci:module</code> values.</td></tr>
 <tr><td><code>ci:stage</code></td><td>Property</td><td>Links a manifest to a per-environment URL set (e.g. <code>local</code>, <code>cdn</code>).</td></tr>
 <tr><td><code>ci:provides</code></td><td>Property</td><td>Declares a shared value the library can supply (<code>schema:name</code>, <code>ci:service</code>, <code>ci:respondTo</code>, <code>ci:sendValue</code>, <code>ci:priority</code>).</td></tr>
 <tr><td><code>ci:consumes</code></td><td>Property</td><td>Declares a shared value the library can adopt (<code>schema:name</code>, <code>ci:call</code>, <code>ci:from</code>, <code>ci:module</code>).</td></tr>
 <tr><td><code>ci:accepts</code></td><td>Property</td><td>Declares a value applied to an element's attribute (<code>schema:name</code>, <code>ci:onElement</code>, <code>ci:applyValueTo</code>, <code>ci:transform</code>).</td></tr>
-<tr><td><code>ci:module</code></td><td>Property</td><td>A module specifier, URL, or bundle name: an attribute's handler, a bundle member, or a consumer's eager-load.</td></tr>
+<tr><td><code>ci:module</code></td><td>Property</td><td>A module reference: the module resource itself (IRI) or an import-map specifier (string literal) the loader resolves. Deliberately dual — see the ontology comment; the SHACL shapes constrain it per context.</td></tr>
 <tr><td><code>ci:service</code></td><td>Property</td><td>Registry service key a provider exposes the value from.</td></tr>
 <tr><td><code>ci:respondTo</code></td><td>Property</td><td>DOM event name(s) a provider answers with the value.</td></tr>
 <tr><td><code>ci:sendValue</code></td><td>Property</td><td>Dot-path into the event detail or service object the provided value is read from.</td></tr>

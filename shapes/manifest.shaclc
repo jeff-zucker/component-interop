@@ -1,0 +1,86 @@
+# SHACL-C shape for component-interop manifests (the RDF view a JSON-LD
+# processor produces from a manifest via ../context.jsonld).
+# Canonical, human-readable serialization — manifest.shacl.ttl is the same
+# shape in Turtle for tooling (rdf-validate-shacl); keep the two in lockstep.
+
+BASE <https://jeff-zucker.github.io/component-interop/shapes/manifest>
+
+PREFIX ci:     <https://jeff-zucker.github.io/component-interop/ns#>
+PREFIX ui:     <http://www.w3.org/ns/ui#>
+PREFIX schema: <http://schema.org/>
+PREFIX dct:    <http://purl.org/dc/terms/>
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+
+shape <#ManifestShape> -> ci:Manifest {
+	schema:name xsd:string [1..1] .          # the library identity
+	rdfs:seeAlso IRI [0..*] .                # optional custom-elements.json cross-link
+	ci:component    @<#ComponentShape>    [0..*] .
+	ci:sharedModule @<#SharedModuleShape> [0..*] .
+	ci:attribute    @<#AttributeShape>    [0..*] .
+	ci:stage        @<#StageShape>        [0..*] .
+	ci:provides     @<#ProvidesShape>     [0..*] .
+	ci:consumes     @<#ConsumesShape>     [0..*] .
+	ci:accepts      @<#AcceptsShape>      [0..*] .
+}
+
+# THE shared Component shape: a manifest component entry, a palette card
+# source, and a menu/tab ui:Component item are all this one shape
+# (ci:component has rdfs:range ui:Component; menus type their items explicitly).
+shape <#ComponentShape> {
+	ui:name xsd:string [1..1] .              # the custom-element tag (the map key)
+	ui:label xsd:string [0..1] .             # display label for tab / button / palette card
+	ui:icon xsd:string [0..1] .              # emoji or icon URL (kept literal)
+	ui:hoverTitle xsd:string [0..1] .        # hover / advisory text (HTML title semantics)
+	ui:attribute @<#PropertyValueShape> [0..*] .   # default attributes
+	ui:region IRI [0..1] .                   # menu items only; harmless for manifests
+	rdfs:comment xsd:string [0..*] .         # documentary note (round-tripped by generators)
+	ci:module IRI [0..1] .                   # the ES module to import; absent when the node
+	                                         # itself IS the module IRI (string-form entry)
+	                                         # or when stages carry the URLs
+	schema:description xsd:string [0..1] .   # one-sentence user-facing description
+	dct:conformsTo IRI [0..1] .              # SHACL shape the component's data conforms to
+	dct:references IRI [0..*] .              # the data document(s) it reads/writes
+	schema:softwareHelp IRI [0..1] .         # USER online help (not developer docs)
+}
+
+shape <#PropertyValueShape> {              # a schema:PropertyValue (ui:attribute's range)
+	schema:name xsd:string [1..1] .
+	schema:value xsd:string [1..1] .
+}
+
+shape <#SharedModuleShape> {
+	schema:name xsd:string [1..1] .          # bare import specifier; node is the module IRI
+}
+
+shape <#AttributeShape> {
+	schema:name xsd:string [1..1] .          # the data-* attribute (or space-separated set)
+	ci:module xsd:string [1..*] .            # handler module specifier(s)
+}
+
+shape <#StageShape> {
+	schema:name xsd:string [1..1] .          # "local" | "cdn"
+	ci:component    @<#ComponentShape>    [0..*] .
+	ci:sharedModule @<#SharedModuleShape> [0..*] .
+}
+
+shape <#ProvidesShape> {
+	schema:name xsd:string [1..1] .          # capability key (store, auth, navigation…)
+	ci:service xsd:string [0..1] .           # one of service / respondTo is expected
+	ci:respondTo xsd:string [0..*] .         # (xor not enforced here — kept simple)
+	ci:sendValue xsd:string [0..1] .
+	ci:priority xsd:integer [0..1] .
+}
+
+shape <#ConsumesShape> {
+	schema:name xsd:string [1..1] .
+	ci:call xsd:string [1..1] .
+	ci:from xsd:string [0..1] .
+	ci:module xsd:string [0..1] .            # eager-loaded consumer module
+}
+
+shape <#AcceptsShape> {
+	schema:name xsd:string [1..1] .
+	ci:onElement xsd:string [1..1] .
+	ci:applyValueTo xsd:string [1..1] .
+	ci:transform xsd:string [0..1] .
+}

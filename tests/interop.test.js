@@ -134,7 +134,7 @@ test('manifests: the earlier manifest wins a conflicting specifier; capabilities
     'attribute modules from both manifests merge');
 });
 
-test('manifests: JSON-LD form — @-keys ignored; wrapped attributes/bundles merge like bare ones', requireJsdom(), async () => {
+test('manifests: JSON-LD form — @-keys ignored; wrapped attribute values merge like bare ones', requireJsdom(), async () => {
   const { fetchMap, manifest } = manifests({
     lib: {
       '@context': 'https://jeff-zucker.github.io/component-interop/context.jsonld',
@@ -142,16 +142,65 @@ test('manifests: JSON-LD form — @-keys ignored; wrapped attributes/bundles mer
       '@type': 'Manifest',
       name: 'lib',
       attributes: { 'data-view': { module: 'v1.js' } },
-      bundles: { rdf: { modules: ['m1', 'm2'] } },
     },
   });
-  const ctx = loadCI({ dataset: { manifest, components: 'rdf' }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
   await ctx.api.ready;
 
   assert.deepEqual(plain(ctx.api.manifest.attributes['data-view']), ['v1.js'],
     'wrapped { module } unwraps to the bare form');
-  assert.deepEqual(ctx.importedSpecs, ['m1', 'm2'],
-    'wrapped { modules } bundle expands like a bare list');
+});
+
+test('manifests: object-form component — module feeds the importmap, metadata lands in manifest.meta', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    lib: {
+      name: 'lib',
+      components: {
+        'sol-feed': {
+          module: 'sol-feed.js',
+          label: 'News',
+          icon: '📰',
+          title: 'hover me',
+          description: 'reads feeds',
+          params: [{ name: 'view', value: 'threePanel' }],
+          shape: './shapes/feed.shacl',
+          data: './data/feeds.ttl',
+          help: './help/feed.html',
+        },
+        'sol-bare': { label: 'Bare' },          // metadata-only: no importmap entry
+        'sol-plain': 'plain.js',                // string form untouched
+      },
+    },
+  });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  await ctx.api.ready;
+
+  assert.equal(ctx.api.importmap['sol-feed'], 'http://localhost/sol-feed.js', 'object module feeds the importmap');
+  assert.equal(ctx.api.importmap['sol-plain'], 'http://localhost/plain.js', 'string form unaffected');
+  assert.equal('sol-bare' in ctx.api.importmap, false, 'metadata-only entry adds no importmap entry');
+  const meta = plain(ctx.api.manifest.meta['sol-feed']);
+  assert.equal(meta.label, 'News');
+  assert.equal(meta.icon, '📰');
+  assert.equal(meta.title, 'hover me');
+  assert.equal(meta.description, 'reads feeds');
+  assert.deepEqual(plain(meta.params), [{ name: 'view', value: 'threePanel' }]);
+  assert.equal(meta.shape, 'http://localhost/shapes/feed.shacl', 'shape resolved against the manifest URL');
+  assert.deepEqual(plain(meta.data), ['http://localhost/data/feeds.ttl'], 'data normalized to a resolved array');
+  assert.equal(meta.help, 'http://localhost/help/feed.html', 'help resolved against the manifest URL');
+  assert.equal(plain(ctx.api.manifest.meta['sol-bare']).label, 'Bare');
+});
+
+test('manifests: component metadata is first-wins per field across manifests', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    first:  { name: 'first',  components: { shared: { module: 'a.js', label: 'A' } } },
+    second: { name: 'second', components: { shared: { module: 'b.js', label: 'B', icon: '🅱' } } },
+  });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  await ctx.api.ready;
+
+  const meta = plain(ctx.api.manifest.meta.shared);
+  assert.equal(meta.label, 'A', 'first manifest wins the label');
+  assert.equal(meta.icon, '🅱', 'a field only the later manifest declares still merges');
 });
 
 // ── the broker: provide -> consume wiring over an event channel ───────────────────
@@ -491,13 +540,14 @@ test('load: data-components are imported in order', requireJsdom(), async () => 
   assert.deepEqual(ctx.importedSpecs, ['compA', 'compB'], 'in listed order');
 });
 
-test('load: a data-components token that names a bundle expands to its modules', requireJsdom(), async () => {
+test('load: a data-components token may name a barrel module mapped via shared-modules', requireJsdom(), async () => {
   const { fetchMap, manifest } = manifests({
-    lib: { name: 'lib', bundles: { 'rdf': ['m1', 'm2'] } },
+    lib: { name: 'lib', 'shared-modules': { 'rdf-bundle': 'rdf-bundle.js' } },
   });
-  const ctx = loadCI({ dataset: { manifest, components: 'rdf compX' }, fetchMap });
+  const ctx = loadCI({ dataset: { manifest, components: 'rdf-bundle compX' }, fetchMap });
   await ctx.api.ready;
-  assert.deepEqual(ctx.importedSpecs, ['m1', 'm2', 'compX'], 'bundle name expands; non-bundle passes through');
+  assert.deepEqual(ctx.importedSpecs, ['rdf-bundle', 'compX'],
+    'the barrel is imported by its importmap name (its own imports pull the constituents)');
 });
 
 test('load: data-components="*" imports every component (not shared-modules)', requireJsdom(), async () => {

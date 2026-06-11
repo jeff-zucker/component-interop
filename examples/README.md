@@ -19,14 +19,14 @@ A manifest's **offerings** — what you read to *use* a library:
 Its **plumbing** — only a co-author wiring shared deps reads these:
 
 - **shared-modules** — deps a library externalizes by name so peers dedupe (above all
-  `rdflib` — the shared store).
-- **bundles** — a logical name for a group of modules an attribute points at.
+  `rdflib` — the shared store). A group of modules that loads as one unit is a
+  **barrel module** (a JS file importing its constituents, e.g. sol-components'
+  `rdf-bundle`), named here like any other module.
 
 ```json
 {
   "components": { "my-el": "./my-el.js" },                       // place an element
-  "attributes": { "data-edit-shape": "rdf-bundle" },             // a data-* → its module(s) / a bundle name
-  "bundles":    { "rdf-bundle": ["solid-ui", "sol-form", "…"] }, // a logical module group
+  "attributes": { "data-edit-shape": { "module": "sol-components/core/rdf-bundle.js" } },  // a data-* → its module(s)
   "objects": {                                                   // share a value
     "provides": { "store": { "service": "rdf", "sendValue": "store" } },
     "consumes": { "store": { "call": "useStore" } }

@@ -42,7 +42,7 @@ library→library):
 
 1. **components** — `import()`s the modules named in `data-components` (or `"*"` for all). Each
    resolves against its manifest's URL if relative/absolute, or via an import map if a bare specifier.
-2. **attributes** — a manifest-declared `data-*` loads its module(s) (or `bundle`) when the page
+2. **attributes** — a manifest-declared `data-*` loads its module(s) when the page
    **both** names it in `data-attributes` **and** uses it in the DOM. Named-but-unused loads
    nothing; used-but-unnamed loads nothing.
 3. **objects** — pairs a library's `consumes`/`accepts` with another library's
@@ -54,9 +54,11 @@ library→library):
 
 ## The manifest
 
-Offerings (read these to use the library) — `components`, `attributes`, `objects`; `bundles` is a
-logical module-grouping helper. (A manifest can ALSO carry an import map — `shared-modules`/`stages` —
-but that's optional; see [Using the manifest for import maps](#using-the-manifest-for-import-maps-optional).)
+Offerings (read these to use the library) — `components`, `attributes`, `objects`.
+(A manifest can ALSO carry an import map — `shared-modules`/`stages` — but that's
+optional; see [Using the manifest for import maps](#using-the-manifest-for-import-maps-optional).
+A group of modules that loads as one unit is just a **barrel module** — a JS file
+that imports its constituents — named like any other module.)
 
 ```jsonc
 {
@@ -64,11 +66,23 @@ but that's optional; see [Using the manifest for import maps](#using-the-manifes
   "@id": "",                                          // ↑ JSON-LD header: ci ignores these three;
   "@type": "Manifest",                                //   they make the manifest a valid RDF document
   "name": "my-lib",                                   // library identity (required for sharing)
-  "components":     { "my-widget": "./my-widget.js" },// placeable elements → module (URL or bare specifier)
-  "bundles":        { "editing": { "modules": ["solid-ui", "my-form"] } }, // a logical module group
-  "attributes": {                                     // a data-* → its module(s) or a bundle name (page opts in via data-attributes)
+  "components": {
+    "my-widget": "./my-widget.js",                    // placeable element → module (URL or bare specifier)
+    "my-card": {                                      // …or an object: module + display metadata
+      "module": "./my-card.js",                       //   (module optional when `stages` carry the URLs)
+      "label": "Card",                                //   label for a tab / button / palette card
+      "icon": "🃏",                                   //   emoji or icon URL
+      "title": "Browse a card deck",                  //   hover text
+      "description": "One-line description.",
+      "params": [{ "name": "source", "value": "./cards.ttl" }],  // default attributes
+      "shape": "./shapes/card.shacl",                 //   SHACL shape its data conforms to
+      "data": ["./data/cards.ttl"],                   //   data document(s) it reads/writes
+      "help": "./help/my-card.html"                   //   USER online help (not dev docs)
+    }
+  },
+  "attributes": {                                     // a data-* → its module(s) (page opts in via data-attributes)
     "data-login": { "module": "./my-login.js" },
-    "data-edit-shape data-subject": { "module": "editing" }   // space-separated keys share modules
+    "data-edit-shape data-subject": { "module": "./editing.js" }   // space-separated keys share modules
   },
   "objects": {
     "provides": {                                     // offer a value (from a service or an event)
@@ -102,7 +116,7 @@ but that's optional; see [Using the manifest for import maps](#using-the-manifes
 
 ## Composing multiple libraries
 
-The broker is N-library by design — list more manifests and bundles; it pairs every opted-in
+The broker is N-library by design — list more manifests; it pairs every opted-in
 `consumes` (the keys named in `data-objects`) with a provider in **any** other library, and the
 `resource` channel + shared `services` registry are page-wide, so all of them share one
 store/session/current-resource with no per-pair glue:
@@ -140,7 +154,7 @@ Conventions that make N libraries coherent:
 
 ## `data-*` attributes (`data-base`, `data-stage`, …)
 
-- `data-components` — components/bundles to `import()` (or `*` for every component)
+- `data-components` — components to `import()` (or `*` for every component; a token may also name any importmap entry, e.g. a barrel module like `rdf-bundle`)
 - `data-objects` — object-capability keys to opt into (wires `consumes`/`accepts`; also eager-loads a key's `module`). A token may name its host inline — `key:provider`, e.g. `store:pod-os` — which also sets the provider preference
 - `data-attributes` — manifest `data-*` keys to opt into (a key loads only when named here **and** present in the DOM)
 - `data-stage` — `local` | `cdn` | `auto` — picks `stages.<stage>` for the optional import map (see below)
@@ -189,7 +203,9 @@ ci-specific.)
 
 ## API (`window.ComponentInterop`)
 
-`ready` (Promise) · `load(bundles, {with})` · `manifest` · `loaded` · `version` ·
+`ready` (Promise) · `load(components)` · `manifest` (`.components` / `.attributes` / `.meta` —
+per-tag display metadata: label, icon, title, description, params, shape, data, help) ·
+`loaded` · `version` ·
 `registerCapability(name, {modules, attributes})` · `registerConsumer(name, fn)` ·
 `services` (register / get / has / names / whenReady) · `has(name)` · `capabilities` ·
 `on(name, fn)` · `emit(name, detail)`. Events: `interop:ready`, `interop:capability` (per

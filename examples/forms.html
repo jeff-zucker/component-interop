@@ -95,16 +95,17 @@ The PodOS component <code>&lt;pos-literals></code> displays a record and adds th
 </div>
 
 <pre id="demo-manifests" hidden>
-# sol-components manifest — the data-edit-* attributes auto-load a bundle
+# sol-components manifest — the data-edit-* attributes auto-load the editing
+# stack via a barrel module (a JS file that imports its constituents)
 # (no object shared here — using the attributes just pulls in code on demand)
 {
-  "bundles": {
-    "rdf-bundle": ["solid-logic", "solid-ui", "sol-form", "sol-modal", "sol-settings", "…"]
-  },
   "attributes": {
-    "data-edit-shape data-subject data-edit-mode": "rdf-bundle"
+    "data-edit-shape": { "module": "sol-components/core/rdf-bundle.js" }
   }
 }
+# core/rdf-bundle.js — importing it IS loading the stack:
+#   import 'solid-logic'; import 'solid-ui'; import 'sol-form';
+#   import 'sol-modal';   import 'sol-settings'; …
 </pre>
 <script src="view-code.js"></script>
 

@@ -2,18 +2,30 @@
   "@context": {
     "@version": 1.1,
     "ci": "https://jeff-zucker.github.io/component-interop/ns#",
-    "schema": "https://schema.org/",
+    "schema": "http://schema.org/",
     "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "ui": "http://www.w3.org/ns/ui#",
+    "dct": "http://purl.org/dc/terms/",
 
     "Manifest": "ci:Manifest",
     "name": "schema:name",
     "customElements": { "@id": "rdfs:seeAlso", "@type": "@id" },
 
-    "components":     { "@id": "ci:component",    "@container": "@index", "@index": "ci:tagName",  "@type": "@id" },
+    "components":     { "@id": "ci:component",    "@container": "@index", "@index": "ui:name",  "@type": "@id",
+                        "@context": { "module": { "@id": "ci:module", "@type": "@id" } } },
     "shared-modules": { "@id": "ci:sharedModule", "@container": "@index", "@index": "schema:name", "@type": "@id" },
 
+    "label":       "ui:label",
+    "icon":        "ui:icon",
+    "title":       "ui:hoverTitle",
+    "description": "schema:description",
+    "params":      { "@id": "ui:attribute",
+                     "@context": { "name": "schema:name", "value": "schema:value" } },
+    "shape":       { "@id": "dct:conformsTo",       "@type": "@id" },
+    "data":        { "@id": "dct:references",       "@type": "@id" },
+    "help":        { "@id": "schema:softwareHelp",  "@type": "@id" },
+
     "attributes": { "@id": "ci:attribute", "@container": "@index", "@index": "schema:name" },
-    "bundles":    { "@id": "ci:bundle",    "@container": "@index", "@index": "schema:name" },
     "stages":     { "@id": "ci:stage",     "@container": "@index", "@index": "schema:name" },
 
     "objects":  "@nest",
@@ -22,7 +34,6 @@
     "accepts":  { "@id": "ci:accepts",  "@container": "@index", "@index": "schema:name" },
 
     "module":       "ci:module",
-    "modules":      { "@id": "ci:module", "@container": "@list" },
     "service":      "ci:service",
     "respondTo":    "ci:respondTo",
     "sendValue":    "ci:sendValue",

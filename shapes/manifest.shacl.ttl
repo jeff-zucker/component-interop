@@ -1,0 +1,75 @@
+# SHACL (Turtle) shape for component-interop manifests — the same shape as
+# manifest.shaclc (the canonical SHACL-C serialization); keep the two in
+# lockstep. This file is what rdf-validate-shacl and other tooling consume.
+
+@base   <https://jeff-zucker.github.io/component-interop/shapes/manifest> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix ci:     <https://jeff-zucker.github.io/component-interop/ns#> .
+@prefix ui:     <http://www.w3.org/ns/ui#> .
+@prefix schema: <http://schema.org/> .
+@prefix dct:    <http://purl.org/dc/terms/> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+
+<#ManifestShape> a sh:NodeShape ;
+  sh:targetClass ci:Manifest ;
+  sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path rdfs:seeAlso ; sh:nodeKind sh:IRI ] ;
+  sh:property [ sh:path ci:component ;    sh:node <#ComponentShape> ] ;
+  sh:property [ sh:path ci:sharedModule ; sh:node <#SharedModuleShape> ] ;
+  sh:property [ sh:path ci:attribute ;    sh:node <#AttributeShape> ] ;
+  sh:property [ sh:path ci:stage ;        sh:node <#StageShape> ] ;
+  sh:property [ sh:path ci:provides ;     sh:node <#ProvidesShape> ] ;
+  sh:property [ sh:path ci:consumes ;     sh:node <#ConsumesShape> ] ;
+  sh:property [ sh:path ci:accepts ;      sh:node <#AcceptsShape> ] .
+
+# THE shared Component shape: a manifest component entry, a palette card
+# source, and a menu/tab ui:Component item are all this one shape.
+<#ComponentShape> a sh:NodeShape ;
+  sh:property [ sh:path ui:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ui:label ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ui:icon ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ui:hoverTitle ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ui:attribute ; sh:node <#PropertyValueShape> ] ;
+  sh:property [ sh:path ui:region ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+  sh:property [ sh:path rdfs:comment ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path ci:module ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+  sh:property [ sh:path schema:description ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+  sh:property [ sh:path dct:conformsTo ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+  sh:property [ sh:path dct:references ; sh:nodeKind sh:IRI ] ;
+  sh:property [ sh:path schema:softwareHelp ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] .
+
+<#PropertyValueShape> a sh:NodeShape ;
+  sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path schema:value ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+<#SharedModuleShape> a sh:NodeShape ;
+  sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+<#AttributeShape> a sh:NodeShape ;
+  sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:module ; sh:datatype xsd:string ; sh:minCount 1 ] .
+
+<#StageShape> a sh:NodeShape ;
+  sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:component ;    sh:node <#ComponentShape> ] ;
+  sh:property [ sh:path ci:sharedModule ; sh:node <#SharedModuleShape> ] .
+
+<#ProvidesShape> a sh:NodeShape ;
+  sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:service ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:respondTo ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path ci:sendValue ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:priority ; sh:datatype xsd:integer ; sh:maxCount 1 ] .
+
+<#ConsumesShape> a sh:NodeShape ;
+  sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:call ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:from ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:module ; sh:datatype xsd:string ; sh:maxCount 1 ] .
+
+<#AcceptsShape> a sh:NodeShape ;
+  sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:onElement ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:applyValueTo ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path ci:transform ; sh:datatype xsd:string ; sh:maxCount 1 ] .

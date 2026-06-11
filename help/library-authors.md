@@ -10,7 +10,20 @@ entry, plus at most one registered function.
   "@id": "",
   "@type": "Manifest",
   "name": "my-lib",
-  "components": { "my-widget": "./my-widget.js" },
+  "components": {
+    "my-widget": "./my-widget.js",
+    "my-card": {                                  // object form: module + display metadata
+      "module": "./my-card.js",
+      "label": "Card",
+      "icon": "🃏",
+      "title": "Browse a card deck",
+      "description": "One-line description.",
+      "params": [{ "name": "source", "value": "./cards.ttl" }],
+      "shape": "./shapes/card.shacl",
+      "data": ["./data/cards.ttl"],
+      "help": "./help/my-card.html"
+    }
+  },
   "attributes": { "data-my-thing": { "module": "./my-thing.js" } },
   "objects": {
     "provides": { "store": { "service": "store", "sendValue": "graph" } },
@@ -49,6 +62,32 @@ your library directly.
 That's the whole contract: one JSON file makes you offerable in three directions; one
 registered function per foreign value makes you adoptive in the fourth.
 
+## Component display metadata
+
+A `components` entry may be an object instead of a bare module string. Every field is
+optional, and `module` itself is optional when `stages` carry the URLs — an entry can be
+pure metadata. What each field is FOR:
+
+- `label` — the display name a host shows on a tab, button, or palette card. **The label
+  is also the palette opt-in**: hosts like data-kitchen list any manifest component that
+  has one in their drag-and-drop component palette.
+- `icon` — an emoji or icon URL shown beside the label.
+- `title` — hover/advisory text (HTML `title`-attribute semantics).
+- `description` — a one-sentence user-facing description, shown on the palette card.
+- `params` — default attributes (`[{ "name": …, "value": … }]`) applied when the
+  component is placed.
+- `shape` — the SHACL shape the component's data conforms to.
+- `data` — the data document(s) it reads/writes (string or array).
+- `help` — USER online help (a page for end users — not your developer docs).
+
+`shape`, `data`, and `help` resolve against the manifest's URL, same rule as modules.
+Hosts read it all from `ComponentInterop.manifest.meta["my-card"]`.
+
+A group of modules that should load as one unit is just a **barrel module** — a JS file
+that imports its constituents (see sol-components' `core/rdf-bundle.js`). Name it in an
+`attributes` entry or give it an importmap name via `shared-modules`; there is no
+separate bundle concept.
+
 ## Your manifest is valid JSON-LD
 
 The three `@`-lines at the top of the example make the manifest valid JSON-LD 1.1 —
@@ -63,10 +102,15 @@ keys) lands in the graph as data.
 - `@id: ""` means "this manifest's own URL"; `@type: "Manifest"` types the document.
 - The vocabulary lives at `https://jeff-zucker.github.io/component-interop/ns#`
   (each term documented there).
-- Two value shapes serve the RDF mapping: an `attributes` entry is
-  `{ "module": "./my-thing.js" }` and a `bundles` entry is
-  `{ "modules": ["dep-a", "dep-b"] }` (the broker also accepts the bare
-  string/list shorthand, which JSON-LD processors won't fully index).
+- One value shape serves the RDF mapping: an `attributes` entry is
+  `{ "module": "./my-thing.js" }` (the broker also accepts the bare string
+  shorthand, which JSON-LD processors won't fully index). Component metadata
+  objects are already node objects and need no wrapper.
+- The manifest format itself has a SHACL shape —
+  `shapes/manifest.shaclc` (compact syntax) and `shapes/manifest.shacl.ttl`
+  in the ci repo — and a manifest component, a palette entry, and a menu item
+  are all the same `ui:Component` shape, so menus, palettes, and manifests
+  validate and join as one vocabulary.
 - If your library ships a
   [custom-elements.json](https://github.com/webcomponents/custom-elements-manifest),
   link it with `"customElements": "./custom-elements.json"` so consumers can join

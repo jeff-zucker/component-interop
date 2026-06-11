@@ -30,10 +30,18 @@
  *                                                     //   they make the manifest valid JSON-LD 1.1
  *                                                     //   (RDF-processable by outside consumers)
  *     "name": "…",                                  // library identity (required for sharing)
- *     "components": { "my-el": "./my-el.js" },       // placeable elements → module (URL or bare specifier)
- *     "attributes": { "data-x": { "module": "./mod.js" },   // a data-* → module specifier(s) or a bundle name
- *                     "data-a data-b": "rdf" },       // (space-separated keys share modules; bare value = wrapper-less shorthand)
- *     "bundles":    { "rdf": { "modules": ["solid-ui", "sol-form"] } }, // a name → module specifiers (logical group; bare list also accepted)
+ *     "components": {
+ *       "my-el": "./my-el.js",                       // placeable element → module (URL or bare specifier)
+ *       "my-card": {                                 // …or an object: module + display metadata
+ *         "module": "./my-card.js",                  //   (module optional when `stages` carry the URLs)
+ *         "label": "Card",  "icon": "🃏",            //   tab/button/palette label; emoji or icon URL
+ *         "title": "hover text", "description": "…", //   hover title; one-sentence description
+ *         "params": [{ "name": "source", "value": "./cards.ttl" }],  // default attributes
+ *         "shape": "./shapes/card.shacl",            //   SHACL shape its data conforms to
+ *         "data": ["./data/cards.ttl"],              //   data document(s) it reads/writes
+ *         "help": "./help/my-card.html" } },         //   USER online help (not dev docs)
+ *     "attributes": { "data-x": { "module": "./mod.js" },   // a data-* → module specifier(s)
+ *                     "data-a data-b": "./both.js" }, // (space-separated keys share modules; bare value = wrapper-less shorthand)
  *     "objects": {
  *       "provides": { key: { service|respondTo: "…", sendValue: "…", priority?: n } }, // offer a value (service or event; respondTo may be a list)
  *       "consumes": { key: { call: "<registered-consumer>", from?: "<lib>", module?: "<spec>" } }, // adopt it by calling a handler (module: code eager-loaded for data-objects)
@@ -67,8 +75,10 @@
  * (data-stage and data-importmap-extra relate to the optional import map — see the
  * end section.)
  *
- * API on window.ComponentInterop: ready (Promise), load(components), manifest,
- * loaded, version, registerCapability("data-x", modules),
+ * API on window.ComponentInterop: ready (Promise), load(components), manifest
+ * (.components / .attributes / .meta — per-tag display metadata: label, icon,
+ * title, description, params, shape, data, help; shape/data/help resolved
+ * against their manifest), loaded, version, registerCapability("data-x", modules),
  * registerConsumer(name,fn); the host-services registry .services
  * (register/get/has/names/whenReady) so libraries share resources without
  * importing each other; .has(name) / .capabilities; .on(name,fn) / .emit(name,detail).
@@ -135,7 +145,7 @@
     if (host && !PREFER[k]) PREFER[k] = host;
   });
 
-  var MANIFEST = { components: {}, attributes: {}, bundles: {} };   // grows as manifests merge in
+  var MANIFEST = { components: {}, attributes: {}, meta: {} };   // grows as manifests merge in
 
   var api = window.ComponentInterop = window.ComponentInterop || {};
   api.manifest = MANIFEST;
@@ -231,8 +241,8 @@
 
   // ── manifests ────────────────────────────────────────────────────────────
   // A module specifier is resolved against THIS manifest's URL when relative
-  // (`./`, `../`, `/`, or a full URL); a bare specifier (e.g. "solid-logic") or a
-  // bundle name passes through (the importmap / bundles resolve it at load time).
+  // (`./`, `../`, `/`, or a full URL); a bare specifier (e.g. "solid-logic")
+  // passes through (the importmap resolves it at load time).
   function resolveSpec(spec, url) {
     return /^(\.{0,2}\/|https?:)/.test(spec) ? resolveUrl(spec, url) : spec;
   }
@@ -244,25 +254,42 @@
     });
     return into;
   }
-  // `attributes`: a data-* (or space-separated set) → module specifier(s)/bundle name.
+  // `attributes`: a data-* (or space-separated set) → module specifier(s).
   // The value may be wrapped as { "module": … } (the JSON-LD form) or bare.
   function mergeAttributes(key, value, url) {
     if (value && value.module) value = value.module;
     MANIFEST.attributes[key] = addSpecs((MANIFEST.attributes[key] || []), value, url);
   }
   api.registerCapability = function (key, value) { mergeAttributes(key, value, ''); return api; };
-  // `bundles`: a logical name → a list of module specifiers (not a physical file).
-  // The value may be wrapped as { "modules": […] } (the JSON-LD form) or a bare list.
-  function mergeBundle(name, value, url) {
-    if (value && value.modules) value = value.modules;
-    MANIFEST.bundles[name] = addSpecs((MANIFEST.bundles[name] || []), value, url);
+  // Display/metadata fields of an object-form component entry, kept per tag in
+  // MANIFEST.meta (first manifest to declare a field wins). `shape`, `help`,
+  // and each `data` entry are document URLs — resolved against the manifest
+  // like modules; `label`, `icon` (may be an emoji), `title`, `description`,
+  // and `params` are kept verbatim.
+  function mergeMeta(tag, v, url) {
+    var meta = MANIFEST.meta[tag] || (MANIFEST.meta[tag] = {});
+    ['label', 'icon', 'title', 'description', 'params'].forEach(function (k) {
+      if (v[k] != null && meta[k] == null) meta[k] = v[k];
+    });
+    if (v.shape != null && meta.shape == null) meta.shape = resolveUrl(v.shape, url);
+    if (v.help != null && meta.help == null) meta.help = resolveUrl(v.help, url);
+    if (v.data != null && meta.data == null)
+      meta.data = (Array.isArray(v.data) ? v.data : [v.data]).map(function (d) { return resolveUrl(d, url); });
   }
   // `components` (placeable) + `shared-modules` (deps) → the importmap (first-wins).
-  // Only `components` keys count for data-components="*".
+  // Only `components` keys count for data-components="*". A components value may
+  // be an object — its `module` (optional when a stage carries the URL) feeds
+  // the importmap exactly as a string value does; the rest is metadata.
   function mergeUrlMap(map, url, areComponents) {
     if (!map) return;
-    for (var s in map) if (own(map, s) && !own(imports, s)) {
-      imports[s] = resolveUrl(map[s], url);
+    for (var s in map) if (own(map, s)) {
+      var v = map[s];
+      if (v && typeof v === 'object') {
+        if (areComponents) mergeMeta(s, v, url);
+        v = v.module;
+      }
+      if (!v || own(imports, s)) continue;
+      imports[s] = resolveUrl(v, url);
       if (areComponents) MANIFEST.components[s] = imports[s];
     }
   }
@@ -274,8 +301,6 @@
     mergeUrlMap(staged.components, url, true);
     mergeUrlMap(m['shared-modules'], url, false);
     mergeUrlMap(staged['shared-modules'], url, false);
-    var bundles = m.bundles || {};
-    for (var b in bundles) if (own(bundles, b)) mergeBundle(b, bundles[b], url);
     var attrs = m.attributes || {};
     for (var a in attrs) if (own(attrs, a)) mergeAttributes(a, attrs[a], url);
     // objects: per-library shared-value declarations (keyed by library name).
@@ -454,23 +479,19 @@
     api.emit('interop:capability', { name: name });
   }
 
-  // Expand a token to its modules: a bundle name → the bundle's modules; else itself.
-  function expandModules(token) {
-    return (MANIFEST.bundles[token] || [token]).slice();
-  }
-  function expandAll(tokens) {
+  function uniq(tokens) {
     var out = [];
-    tokens.forEach(function (t) {
-      expandModules(t).forEach(function (m) { if (out.indexOf(m) === -1) out.push(m); });
-    });
+    tokens.forEach(function (t) { if (t && out.indexOf(t) === -1) out.push(t); });
     return out;
   }
-  // Import the listed components/bundles; `*` = every placeable `components` entry.
+  // Import the listed components; `*` = every placeable `components` entry.
+  // A token may also name any importmap entry — e.g. a barrel module like
+  // sol-components' "rdf-bundle" (a plain JS file that imports its constituents).
   function load(components) {
     ensureImportmap();
     var list = toList(components);
     if (list.indexOf('*') !== -1) list = Object.keys(MANIFEST.components);
-    return importSeq(expandAll(list));
+    return importSeq(uniq(list));
   }
   api.load = load;
 
@@ -487,7 +508,7 @@
       else if (!knownObjectKeys[k]) console.warn('[component-interop] data-objects "' + k + '": unknown capability — not declared in any manifest objects block');
       // else: declared but module-less (a wire-only channel, e.g. `accepts`) — nothing to eager-load
     });
-    return importSeq(expandAll(specs)).then(function () {
+    return importSeq(uniq(specs)).then(function () {
       list.forEach(function (k) { if (objectModules[k]) markCapability(k); });
     });
   }
@@ -517,7 +538,7 @@
         try { return !!document.querySelector('[' + attr + ']'); } catch (e) { return false; }
       });
       if (!on) return;
-      importSeq(expandAll(sets[key])).then(function () { markCapability(key); });
+      importSeq(uniq(sets[key])).then(function () { markCapability(key); });
     });
   }
   function whenDomReady(fn) {
