@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1">
+<title>component-interop vocabulary (ci:)</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 60rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
+  th { background: #f3f3f3; }
+  code { background: #f6f6f6; padding: 0 0.2rem; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": {
+    "ci": "https://jeff-zucker.github.io/component-interop/ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  },
+  "@graph": [
+    { "@id": "ci:Manifest", "@type": "rdfs:Class",
+      "rdfs:label": "Manifest",
+      "rdfs:comment": "A component-interop loader manifest: declares the components, capability attributes, bundles, staged module URLs, and shared-value wiring of one library." },
+    { "@id": "ci:component", "@type": "rdf:Property",
+      "rdfs:label": "component",
+      "rdfs:comment": "Links a manifest (or a stage) to a loadable web-component module. The module node carries ci:tagName." },
+    { "@id": "ci:tagName", "@type": "rdf:Property",
+      "rdfs:label": "tagName",
+      "rdfs:comment": "The custom-element tag name (also the import-map specifier) of a component module. Name aligned with the custom-elements-manifest format's tagName field." },
+    { "@id": "ci:sharedModule", "@type": "rdf:Property",
+      "rdfs:label": "sharedModule",
+      "rdfs:comment": "Links a manifest (or a stage) to a dependency module mapped in the import map. The module node carries schema:name (its bare import specifier)." },
+    { "@id": "ci:attribute", "@type": "rdf:Property",
+      "rdfs:label": "attribute",
+      "rdfs:comment": "Links a manifest to a data-* capability attribute declaration. The node carries schema:name (the attribute name, e.g. data-from-query) and ci:module (its handler module or bundle name). Distinct from the custom-elements-manifest sense of 'attributes' (a single component's own HTML attributes)." },
+    { "@id": "ci:bundle", "@type": "rdf:Property",
+      "rdfs:label": "bundle",
+      "rdfs:comment": "Links a manifest to a named logical bundle. The node carries schema:name and an ordered rdf:List of ci:module values." },
+    { "@id": "ci:stage", "@type": "rdf:Property",
+      "rdfs:label": "stage",
+      "rdfs:comment": "Links a manifest to a per-environment URL set (e.g. local, cdn). The stage node carries schema:name plus ci:component / ci:sharedModule links." },
+    { "@id": "ci:provides", "@type": "rdf:Property",
+      "rdfs:label": "provides",
+      "rdfs:comment": "Declares a shared value this library can supply. The node carries schema:name (the capability key) plus ci:service, ci:respondTo, ci:sendValue, ci:priority." },
+    { "@id": "ci:consumes", "@type": "rdf:Property",
+      "rdfs:label": "consumes",
+      "rdfs:comment": "Declares a shared value this library can adopt. The node carries schema:name plus ci:call, ci:from, ci:module." },
+    { "@id": "ci:accepts", "@type": "rdf:Property",
+      "rdfs:label": "accepts",
+      "rdfs:comment": "Declares a value applied to a DOM element's attribute. The node carries schema:name plus ci:onElement, ci:applyValueTo, ci:transform." },
+    { "@id": "ci:module", "@type": "rdf:Property",
+      "rdfs:label": "module",
+      "rdfs:comment": "A module specifier, URL, or bundle name (literal): the handler of an attribute, a member of a bundle, or the eager-load of a consumer. Kept as one uniform term rather than borrowing dcterms:hasPart for bundle membership." },
+    { "@id": "ci:service", "@type": "rdf:Property",
+      "rdfs:label": "service",
+      "rdfs:comment": "Registry service key a provider exposes the value from." },
+    { "@id": "ci:respondTo", "@type": "rdf:Property",
+      "rdfs:label": "respondTo",
+      "rdfs:comment": "DOM event name(s) a provider answers with the value." },
+    { "@id": "ci:sendValue", "@type": "rdf:Property",
+      "rdfs:label": "sendValue",
+      "rdfs:comment": "Dot-path into the event detail or service object from which the provided value is read." },
+    { "@id": "ci:priority", "@type": "rdf:Property",
+      "rdfs:label": "priority",
+      "rdfs:comment": "Numeric tiebreaker when multiple libraries provide the same capability." },
+    { "@id": "ci:call", "@type": "rdf:Property",
+      "rdfs:label": "call",
+      "rdfs:comment": "Registered handler invoked with the consumed value." },
+    { "@id": "ci:from", "@type": "rdf:Property",
+      "rdfs:label": "from",
+      "rdfs:comment": "Preferred provider library name for a consumed value." },
+    { "@id": "ci:onElement", "@type": "rdf:Property",
+      "rdfs:label": "onElement",
+      "rdfs:comment": "CSS selector of the element an accepted value applies to." },
+    { "@id": "ci:applyValueTo", "@type": "rdf:Property",
+      "rdfs:label": "applyValueTo",
+      "rdfs:comment": "Attribute name the accepted value is written to." },
+    { "@id": "ci:transform", "@type": "rdf:Property",
+      "rdfs:label": "transform",
+      "rdfs:comment": "Named transformation applied to the accepted value before it is set (e.g. stripHash)." }
+  ]
+}
+</script>
+</head>
+<body>
+<h1>component-interop vocabulary</h1>
+<p>
+Namespace IRI: <code>https://jeff-zucker.github.io/component-interop/ns#</code>
+(prefix <code>ci:</code>).
+These terms describe <a href="https://github.com/jeff-zucker/component-interop">component-interop</a>
+loader manifests, which are valid JSON-LD 1.1 via the shared context
+<a href="../context.jsonld"><code>context.jsonld</code></a>.
+The machine-readable ontology is embedded in this page as
+<code>application/ld+json</code>.
+</p>
+<p>
+Borrowed terms (not minted here):
+<code>schema:name</code> (<a href="https://schema.org/name">schema.org/name</a>)
+names libraries, attributes, bundles, stages, and capability keys — used here
+with exact-identifier semantics, narrower than schema.org's general label;
+<code>rdfs:seeAlso</code> (as the manifest key <code>customElements</code>)
+links a manifest to the library's
+<a href="https://github.com/webcomponents/custom-elements-manifest">custom-elements.json</a>.
+</p>
+<table>
+<tr><th>Term</th><th>Type</th><th>Definition</th></tr>
+<tr><td><code>ci:Manifest</code></td><td>Class</td><td>A component-interop loader manifest: declares the components, capability attributes, bundles, staged module URLs, and shared-value wiring of one library.</td></tr>
+<tr><td><code>ci:component</code></td><td>Property</td><td>Links a manifest (or a stage) to a loadable web-component module; the module node carries <code>ci:tagName</code>.</td></tr>
+<tr><td><code>ci:tagName</code></td><td>Property</td><td>The custom-element tag name (also the import-map specifier) of a component module. Aligned with the custom-elements-manifest <code>tagName</code> field.</td></tr>
+<tr><td><code>ci:sharedModule</code></td><td>Property</td><td>Links a manifest (or a stage) to a dependency module mapped in the import map; the module node carries <code>schema:name</code> (its bare specifier).</td></tr>
+<tr><td><code>ci:attribute</code></td><td>Property</td><td>Links a manifest to a <code>data-*</code> capability attribute declaration (<code>schema:name</code> + <code>ci:module</code>). Distinct from the custom-elements-manifest sense of a component's own attributes.</td></tr>
+<tr><td><code>ci:bundle</code></td><td>Property</td><td>Links a manifest to a named logical bundle: <code>schema:name</code> + an ordered list of <code>ci:module</code> values.</td></tr>
+<tr><td><code>ci:stage</code></td><td>Property</td><td>Links a manifest to a per-environment URL set (e.g. <code>local</code>, <code>cdn</code>).</td></tr>
+<tr><td><code>ci:provides</code></td><td>Property</td><td>Declares a shared value the library can supply (<code>schema:name</code>, <code>ci:service</code>, <code>ci:respondTo</code>, <code>ci:sendValue</code>, <code>ci:priority</code>).</td></tr>
+<tr><td><code>ci:consumes</code></td><td>Property</td><td>Declares a shared value the library can adopt (<code>schema:name</code>, <code>ci:call</code>, <code>ci:from</code>, <code>ci:module</code>).</td></tr>
+<tr><td><code>ci:accepts</code></td><td>Property</td><td>Declares a value applied to an element's attribute (<code>schema:name</code>, <code>ci:onElement</code>, <code>ci:applyValueTo</code>, <code>ci:transform</code>).</td></tr>
+<tr><td><code>ci:module</code></td><td>Property</td><td>A module specifier, URL, or bundle name: an attribute's handler, a bundle member, or a consumer's eager-load.</td></tr>
+<tr><td><code>ci:service</code></td><td>Property</td><td>Registry service key a provider exposes the value from.</td></tr>
+<tr><td><code>ci:respondTo</code></td><td>Property</td><td>DOM event name(s) a provider answers with the value.</td></tr>
+<tr><td><code>ci:sendValue</code></td><td>Property</td><td>Dot-path into the event detail or service object the provided value is read from.</td></tr>
+<tr><td><code>ci:priority</code></td><td>Property</td><td>Numeric tiebreaker among multiple providers of one capability.</td></tr>
+<tr><td><code>ci:call</code></td><td>Property</td><td>Registered handler invoked with the consumed value.</td></tr>
+<tr><td><code>ci:from</code></td><td>Property</td><td>Preferred provider library name for a consumed value.</td></tr>
+<tr><td><code>ci:onElement</code></td><td>Property</td><td>CSS selector of the element an accepted value applies to.</td></tr>
+<tr><td><code>ci:applyValueTo</code></td><td>Property</td><td>Attribute name the accepted value is written to.</td></tr>
+<tr><td><code>ci:transform</code></td><td>Property</td><td>Named transformation applied before the value is set (e.g. <code>stripHash</code>).</td></tr>
+</table>
+</body>
+</html>

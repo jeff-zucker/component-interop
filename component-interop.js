@@ -25,11 +25,15 @@
  *   `components` — placeable elements, loaded by `data-components` (or `"*"`).
  *   `attributes` — `data-*` you can use, loaded when named AND present in the DOM.
  *   `objects`    — values shared with other libraries (a store, an auth fetch, …).
- *   { "name": "…",                                  // library identity (required for sharing)
+ *   { "@context": "https://jeff-zucker.github.io/component-interop/context.jsonld",
+ *     "@id": "", "@type": "Manifest",                 // JSON-LD header — ci ignores all three;
+ *                                                     //   they make the manifest valid JSON-LD 1.1
+ *                                                     //   (RDF-processable by outside consumers)
+ *     "name": "…",                                  // library identity (required for sharing)
  *     "components": { "my-el": "./my-el.js" },       // placeable elements → module (URL or bare specifier)
- *     "attributes": { "data-x": "./mod.js",          // a data-* → module specifier(s) or a bundle name
- *                     "data-a data-b": "rdf" },       // (space-separated keys share modules)
- *     "bundles":    { "rdf": ["solid-ui", "sol-form"] }, // a name → module specifiers (logical group)
+ *     "attributes": { "data-x": { "module": "./mod.js" },   // a data-* → module specifier(s) or a bundle name
+ *                     "data-a data-b": "rdf" },       // (space-separated keys share modules; bare value = wrapper-less shorthand)
+ *     "bundles":    { "rdf": { "modules": ["solid-ui", "sol-form"] } }, // a name → module specifiers (logical group; bare list also accepted)
  *     "objects": {
  *       "provides": { key: { service|respondTo: "…", sendValue: "…", priority?: n } }, // offer a value (service or event; respondTo may be a list)
  *       "consumes": { key: { call: "<registered-consumer>", from?: "<lib>", module?: "<spec>" } }, // adopt it by calling a handler (module: code eager-loaded for data-objects)
@@ -241,12 +245,16 @@
     return into;
   }
   // `attributes`: a data-* (or space-separated set) → module specifier(s)/bundle name.
+  // The value may be wrapped as { "module": … } (the JSON-LD form) or bare.
   function mergeAttributes(key, value, url) {
+    if (value && value.module) value = value.module;
     MANIFEST.attributes[key] = addSpecs((MANIFEST.attributes[key] || []), value, url);
   }
   api.registerCapability = function (key, value) { mergeAttributes(key, value, ''); return api; };
   // `bundles`: a logical name → a list of module specifiers (not a physical file).
+  // The value may be wrapped as { "modules": […] } (the JSON-LD form) or a bare list.
   function mergeBundle(name, value, url) {
+    if (value && value.modules) value = value.modules;
     MANIFEST.bundles[name] = addSpecs((MANIFEST.bundles[name] || []), value, url);
   }
   // `components` (placeable) + `shared-modules` (deps) → the importmap (first-wins).

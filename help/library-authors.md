@@ -6,9 +6,12 @@ entry, plus at most one registered function.
 
 ```jsonc
 {
+  "@context": "https://jeff-zucker.github.io/component-interop/context.jsonld",
+  "@id": "",
+  "@type": "Manifest",
   "name": "my-lib",
   "components": { "my-widget": "./my-widget.js" },
-  "attributes": { "data-my-thing": "./my-thing.js" },
+  "attributes": { "data-my-thing": { "module": "./my-thing.js" } },
   "objects": {
     "provides": { "store": { "service": "store", "sendValue": "graph" } },
     "consumes": { "store": { "call": "myLib.adoptStore" } }
@@ -45,6 +48,29 @@ your library directly.
 
 That's the whole contract: one JSON file makes you offerable in three directions; one
 registered function per foreign value makes you adoptive in the fourth.
+
+## Your manifest is valid JSON-LD
+
+The three `@`-lines at the top of the example make the manifest valid JSON-LD 1.1 —
+a real RDF document — without changing how anything loads. The broker ignores them
+and reads the manifest as plain JSON; they exist for *outside* consumers: a registry
+can crawl manifests into a triple store, a SPARQL query can ask "which libraries
+provide `store`?", and every name in the file (tag names, attribute names, capability
+keys) lands in the graph as data.
+
+- `@context` points at the shared context,
+  `https://jeff-zucker.github.io/component-interop/context.jsonld`.
+- `@id: ""` means "this manifest's own URL"; `@type: "Manifest"` types the document.
+- The vocabulary lives at `https://jeff-zucker.github.io/component-interop/ns#`
+  (each term documented there).
+- Two value shapes serve the RDF mapping: an `attributes` entry is
+  `{ "module": "./my-thing.js" }` and a `bundles` entry is
+  `{ "modules": ["dep-a", "dep-b"] }` (the broker also accepts the bare
+  string/list shorthand, which JSON-LD processors won't fully index).
+- If your library ships a
+  [custom-elements.json](https://github.com/webcomponents/custom-elements-manifest),
+  link it with `"customElements": "./custom-elements.json"` so consumers can join
+  your loading manifest with your API manifest.
 
 ## What a user gains — and what each gain costs
 

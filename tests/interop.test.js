@@ -134,6 +134,26 @@ test('manifests: the earlier manifest wins a conflicting specifier; capabilities
     'attribute modules from both manifests merge');
 });
 
+test('manifests: JSON-LD form — @-keys ignored; wrapped attributes/bundles merge like bare ones', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    lib: {
+      '@context': 'https://jeff-zucker.github.io/component-interop/context.jsonld',
+      '@id': '',
+      '@type': 'Manifest',
+      name: 'lib',
+      attributes: { 'data-view': { module: 'v1.js' } },
+      bundles: { rdf: { modules: ['m1', 'm2'] } },
+    },
+  });
+  const ctx = loadCI({ dataset: { manifest, components: 'rdf' }, fetchMap });
+  await ctx.api.ready;
+
+  assert.deepEqual(plain(ctx.api.manifest.attributes['data-view']), ['v1.js'],
+    'wrapped { module } unwraps to the bare form');
+  assert.deepEqual(ctx.importedSpecs, ['m1', 'm2'],
+    'wrapped { modules } bundle expands like a bare list');
+});
+
 // ── the broker: provide -> consume wiring over an event channel ───────────────────
 test('broker: a consumer is wired to another library\'s provider and invoked with the value', requireJsdom(), async () => {
   const { fetchMap, manifest } = manifests({

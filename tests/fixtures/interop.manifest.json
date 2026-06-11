@@ -1,4 +1,7 @@
 {
+  "@context": "https://jeff-zucker.github.io/component-interop/context.jsonld",
+  "@id": "",
+  "@type": "Manifest",
   "name": "browsertest",
   "components": { "interop-widget": "/tests/fixtures/widget.js" }
 }

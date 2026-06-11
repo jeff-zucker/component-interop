@@ -10,6 +10,8 @@
   },
   "files": [
     "component-interop.js",
+    "context.jsonld",
+    "ns",
     "examples",
     "README.md",
     "LICENSE",
@@ -17,9 +19,10 @@
     "!**/*.swp"
   ],
   "scripts": {
-    "test": "node --test --experimental-test-coverage --test-coverage-exclude='tests/**'",
+    "test": "node --test --experimental-test-coverage --test-coverage-exclude='tests/**' && npm run test:jsonld",
     "test:plain": "node --test",
-    "test:browsers": "node --test tests/importmap.browser.mjs"
+    "test:browsers": "node --test tests/importmap.browser.mjs",
+    "test:jsonld": "node tests/validate-jsonld-manifests.mjs"
   },
   "keywords": [
     "web-components",
@@ -40,6 +43,7 @@
     "url": "https://github.com/jeff-zucker/component-interop"
   },
   "devDependencies": {
+    "jsonld": "^9.0.0",
     "playwright": "^1.60.0"
   }
 }

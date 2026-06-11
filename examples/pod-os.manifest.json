@@ -1,4 +1,7 @@
 {
+  "@context": "https://jeff-zucker.github.io/component-interop/context.jsonld",
+  "@id": "",
+  "@type": "Manifest",
   "name": "pod-os",
   "components": {
     "@pod-os/elements": "https://cdn.jsdelivr.net/npm/@pod-os/elements@0.41.0/dist/elements/elements.esm.js"

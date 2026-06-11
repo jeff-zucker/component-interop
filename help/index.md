@@ -60,12 +60,15 @@ but that's optional; see [Using the manifest for import maps](#using-the-manifes
 
 ```jsonc
 {
+  "@context": "https://jeff-zucker.github.io/component-interop/context.jsonld",
+  "@id": "",                                          // ↑ JSON-LD header: ci ignores these three;
+  "@type": "Manifest",                                //   they make the manifest a valid RDF document
   "name": "my-lib",                                   // library identity (required for sharing)
   "components":     { "my-widget": "./my-widget.js" },// placeable elements → module (URL or bare specifier)
-  "bundles":        { "editing": ["solid-ui", "my-form"] }, // a logical module group
+  "bundles":        { "editing": { "modules": ["solid-ui", "my-form"] } }, // a logical module group
   "attributes": {                                     // a data-* → its module(s) or a bundle name (page opts in via data-attributes)
-    "data-login": "./my-login.js",
-    "data-edit-shape data-subject": "editing"         // space-separated keys share modules
+    "data-login": { "module": "./my-login.js" },
+    "data-edit-shape data-subject": { "module": "editing" }   // space-separated keys share modules
   },
   "objects": {
     "provides": {                                     // offer a value (from a service or an event)

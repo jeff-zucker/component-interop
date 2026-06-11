@@ -23,6 +23,7 @@ This zero-dependency, tiny (17kb) library is component-agnostic - any web compon
   * externalized prereqs (e.g. rdflib) and components are guaranteed to only load once
   * in some cases, one can use attributes from a foreign library without importing the full component
 * is explicit - what a page draws from each library is named in its script tag (data-components, data-objects, data-attributes); nothing wires implicitly
+* manifests are valid JSON-LD 1.1 - RDF consumers (registries, SPARQL) can process them via the shared [context](context.jsonld) and [vocabulary](https://jeff-zucker.github.io/component-interop/ns/); the broker itself reads them as plain JSON, zero dependencies as ever
 
 ### Check out  the [demo](https://jeff-zucker.github.io/component-interop/examples/index.html)!
 
@@ -31,8 +32,9 @@ This zero-dependency, tiny (17kb) library is component-agnostic - any web compon
 ### Tests
 
 ```sh
-npm test             # node unit suite (jsdom + vm), zero deps
+npm test             # node unit suite (jsdom + vm) + JSON-LD manifest validation
 npm run test:browsers   # real-browser regression test in Chromium, Firefox & WebKit (needs Playwright)
+npm run test:jsonld     # JSON-LD only: expand + toRDF every manifest in safe mode
 ```
 
 The browser test guards the import-map timing: ci must inject its importmap
