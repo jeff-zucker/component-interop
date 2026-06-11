@@ -15,6 +15,9 @@ elements that interoperate.
 manifests as you like; until the page names a capability, it stays dormant — so the tag is the
 complete inventory of what the page uses and what cross-wires.
 
+> Library author? See [Making your library shareable](library-authors.md) — the
+> manifest entries and one-function recipes for sharing in every direction.
+
 ## Install / use
 
 ```html

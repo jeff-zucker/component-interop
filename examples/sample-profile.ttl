@@ -4,6 +4,6 @@
 <#me> a foaf:Person;
     foaf:name "Ada Lovelace";
     vcard:fn "Augusta Ada King, Countess of Lovelace";
-    vcard:role "Mathematician";
+    vcard:role "MathematicianZZZ";
     vcard:organization-name "Analytical Engine Programme";
     vcard:note "First to publish an algorithm intended for a machine.".
