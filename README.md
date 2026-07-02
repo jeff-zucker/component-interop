@@ -51,6 +51,27 @@ npm i -D playwright && npx playwright install
 
 If Playwright isn't installed, the tests skip rather than fail.
 
+### Security / trust model
+
+Component Interop shares capabilities **within a single document**. When a component
+provides a value — e.g. an `authenticatedFetch` — it is dispatched on a same-document
+`CustomEvent` and passed as a live JavaScript reference; nothing is serialized or sent
+to another frame (there is no `postMessage` / iframe channel here). Two consequences
+follow, and they are by design:
+
+- **Trust is at the origin, per page.** Any script the page author loads can listen for
+  a provided capability and receive it. There is no per-consumer token or scoping: the
+  broker trusts every component on the page. **A hostile component you load is a full
+  compromise** — it can read the shared authenticated fetch and act as the user. Only
+  load components you trust, from sources you trust.
+- **Manifests are configuration you control.** A `data-manifest` URL decides which module
+  URLs the page executes, so treat a manifest like any other script you include. Keys
+  from a manifest that would poison a prototype (`__proto__`, `constructor`, `prototype`)
+  are skipped during merge.
+
+Nothing crosses an iframe boundary, so a capability is never leaked to a frame; the
+boundary that matters is *which components the page author chooses to load*.
+
 ### Transparency
 
 Portions created using Claude Opus 4.8.

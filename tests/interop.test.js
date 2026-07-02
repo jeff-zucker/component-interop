@@ -110,6 +110,20 @@ test('importmap: no loader nonce → no nonce on the importmap (unchanged for no
   assert.ok(!tag.nonce, 'no nonce attribute when the loader has none');
 });
 
+test('importmap: prototype-poisoning manifest keys are skipped', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    evil: { name: 'evil', components: { constructor: 'boom.js', prototype: 'boom.js', 'lib-ok': 'ok.js' } },
+  });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  await ctx.api.ready;
+
+  // the dangerous keys were not merged as real entries…
+  assert.equal(Object.prototype.hasOwnProperty.call(ctx.api.importmap, 'constructor'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(ctx.api.importmap, 'prototype'), false);
+  // …but a normal key alongside them still is.
+  assert.equal(ctx.api.importmap['lib-ok'], 'http://localhost/ok.js');
+});
+
 test('importmap: data-importmap-extra is merged but a manifest import wins a conflict', requireJsdom(), async () => {
   const { fetchMap, manifest } = manifests({
     libA: { name: 'libA', components: { shared: 'shared.js' } },

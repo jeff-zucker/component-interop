@@ -210,7 +210,11 @@
   // module-load identity (the `:provider` host is handled once, into PREFER, above).
   function objKey(tok) { var i = tok.indexOf(':'); return i === -1 ? tok : tok.slice(0, i); }
   function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
-  function assign(t, s) { if (s) for (var k in s) if (own(s, k)) t[k] = s[k]; return t; }
+  // Refuse manifest-controlled keys that would poison a prototype. A manifest is a
+  // fetched, possibly cross-origin document, and its keys become object keys below;
+  // skip the dangerous ones rather than rely on the __proto__ setter's quirks.
+  function safeKey(k) { return k !== '__proto__' && k !== 'constructor' && k !== 'prototype'; }
+  function assign(t, s) { if (s) for (var k in s) if (own(s, k) && safeKey(k)) t[k] = s[k]; return t; }
   function resolveUrl(v, baseUrl) { try { return new URL(v, baseUrl).href; } catch (e) { return v; } }
 
   // ── importmap ──────────────────────────────────────────────────────────────
@@ -263,6 +267,7 @@
   // `attributes`: a data-* (or space-separated set) → module specifier(s).
   // The value may be wrapped as { "module": … } (the JSON-LD form) or bare.
   function mergeAttributes(key, value, url) {
+    if (!safeKey(key)) return;
     if (value && value.module) value = value.module;
     MANIFEST.attributes[key] = addSpecs((MANIFEST.attributes[key] || []), value, url);
   }
@@ -273,6 +278,7 @@
   // like modules; `label`, `icon` (may be an emoji), `title`, `description`,
   // and `params` are kept verbatim.
   function mergeMeta(tag, v, url) {
+    if (!safeKey(tag)) return;
     var meta = MANIFEST.meta[tag] || (MANIFEST.meta[tag] = {});
     ['label', 'icon', 'title', 'description', 'params'].forEach(function (k) {
       if (v[k] != null && meta[k] == null) meta[k] = v[k];
@@ -288,7 +294,7 @@
   // the importmap exactly as a string value does; the rest is metadata.
   function mergeUrlMap(map, url, areComponents) {
     if (!map) return;
-    for (var s in map) if (own(map, s)) {
+    for (var s in map) if (own(map, s) && safeKey(s)) {
       var v = map[s];
       if (v && typeof v === 'object') {
         if (areComponents) mergeMeta(s, v, url);
@@ -317,7 +323,7 @@
       // so `data-objects="key"` can eager-load it.
       ['provides', 'consumes', 'accepts'].forEach(function (g) {
         var blk = m.objects[g]; if (!blk) return;
-        for (var key in blk) if (own(blk, key) && blk[key]) {
+        for (var key in blk) if (own(blk, key) && safeKey(key) && blk[key]) {
           knownObjectKeys[key] = true;
           if (blk[key].module)
             objectModules[key] = addSpecs((objectModules[key] || []), blk[key].module, url);
