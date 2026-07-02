@@ -6,7 +6,7 @@
 
 The goal is interoperable web-components which can share resources even if they come from different component libraries by different authors. 
 
-This zero-dependency, tiny (17kb) library is component-agnostic - any web component can use it.
+This zero-dependency, tiny (~30kb source) library is component-agnostic - any web component can use it.
 
 **Component Interop**
 * does nothing on its own - it just brokers btwn component libraries

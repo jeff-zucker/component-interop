@@ -41,7 +41,7 @@
  *         "data": ["./data/cards.ttl"],              //   data document(s) it reads/writes
  *         "help": "./help/my-card.html" } },         //   USER online help (not dev docs)
  *     "attributes": { "data-x": { "module": "./mod.js" },   // a data-* → module specifier(s)
- *                     "data-a data-b": "./both.js" }, // (space-separated keys share modules; bare value = wrapper-less shorthand)
+ *                     "data-a data-b": { "module": "./both.js" } }, // (space-separated keys share the module)
  *     "objects": {
  *       "provides": { key: { service|respondTo: "…", sendValue: "…", priority?: n } }, // offer a value (service or event; respondTo may be a list)
  *       "consumes": { key: { call: "<registered-consumer>", from?: "<lib>", module?: "<spec>" } }, // adopt it by calling a handler (module: code eager-loaded for data-objects)
