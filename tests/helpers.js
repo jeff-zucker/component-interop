@@ -75,6 +75,7 @@ export function loadCI(opts = {}) {
     domSetup,
     url = 'http://localhost/',
     html = DEFAULT_HTML,
+    nonce,
   } = opts;
 
   const dom = new JSDOM(html, { url });
@@ -84,6 +85,7 @@ export function loadCI(opts = {}) {
   // Fake the loader's own <script> so document.currentScript / .src / .dataset work.
   const script = doc.createElement('script');
   if (src) script.src = src;
+  if (nonce) script.nonce = nonce;
   for (const k in dataset) script.dataset[k] = dataset[k];
   Object.defineProperty(doc, 'currentScript', { configurable: true, get: () => script });
 

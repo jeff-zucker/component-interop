@@ -86,6 +86,30 @@ test('importmap: manifest imports are injected as <script type=importmap> with r
   assert.deepEqual(plain(ctx.api.importmap), map.imports);
 });
 
+test('importmap: the loader nonce is propagated to the injected importmap (CSP)', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    libA: { name: 'libA', components: { 'lib-a': 'lib-a.js' } },
+  });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap, nonce: 'test-nonce-123' });
+  await ctx.api.ready;
+
+  const tag = ctx.document.querySelector('script[type="importmap"]');
+  assert.ok(tag, 'an importmap was injected');
+  assert.equal(tag.nonce, 'test-nonce-123', 'importmap carries the loader script nonce');
+});
+
+test('importmap: no loader nonce → no nonce on the importmap (unchanged for non-CSP pages)', requireJsdom(), async () => {
+  const { fetchMap, manifest } = manifests({
+    libA: { name: 'libA', components: { 'lib-a': 'lib-a.js' } },
+  });
+  const ctx = loadCI({ dataset: { manifest }, fetchMap });
+  await ctx.api.ready;
+
+  const tag = ctx.document.querySelector('script[type="importmap"]');
+  assert.ok(tag, 'an importmap was injected');
+  assert.ok(!tag.nonce, 'no nonce attribute when the loader has none');
+});
+
 test('importmap: data-importmap-extra is merged but a manifest import wins a conflict', requireJsdom(), async () => {
   const { fetchMap, manifest } = manifests({
     libA: { name: 'libA', components: { shared: 'shared.js' } },

@@ -234,6 +234,12 @@
     var el = document.createElement('script');
     el.type = 'importmap';
     el.textContent = JSON.stringify({ imports: out });
+    // CSP: an inline importmap is subject to script-src. If the host serves ci's
+    // own <script> with a nonce (nonce-based CSP), propagate it so this injected
+    // importmap is allowed. Read the .nonce PROPERTY, not getAttribute('nonce') —
+    // browsers hide the nonce content attribute after parsing, but keep the
+    // property. No nonce → empty → no attribute set → unchanged for non-CSP pages.
+    if (self && self.nonce) el.nonce = self.nonce;
     (document.head || document.documentElement).appendChild(el);
     api.importmap = out;
   }
