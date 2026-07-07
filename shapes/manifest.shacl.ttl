@@ -6,16 +6,14 @@
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
 @prefix ci:     <https://jeff-zucker.github.io/component-interop/ns#> .
-@prefix ui:     <http://www.w3.org/ns/ui#> .
 @prefix schema: <http://schema.org/> .
-@prefix dct:    <http://purl.org/dc/terms/> .
 @prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
 
 <#ManifestShape> a sh:NodeShape ;
   sh:targetClass ci:Manifest ;
   sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
   sh:property [ sh:path rdfs:seeAlso ; sh:nodeKind sh:IRI ] ;
-  sh:property [ sh:path ci:component ;    sh:node <#ComponentShape> ] ;
+  sh:property [ sh:path ci:component ;    sh:node <#ManifestEntryShape> ] ;
   sh:property [ sh:path ci:sharedModule ; sh:node <#SharedModuleShape> ] ;
   sh:property [ sh:path ci:attribute ;    sh:node <#AttributeShape> ] ;
   sh:property [ sh:path ci:stage ;        sh:node <#StageShape> ] ;
@@ -23,25 +21,19 @@
   sh:property [ sh:path ci:consumes ;     sh:node <#ConsumesShape> ] ;
   sh:property [ sh:path ci:accepts ;      sh:node <#AcceptsShape> ] .
 
-# THE shared Component shape: a manifest component entry, a palette card
-# source, and a menu/tab ui:Component item are all this one shape.
-<#ComponentShape> a sh:NodeShape ;
-  sh:property [ sh:path ui:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
-  sh:property [ sh:path ui:label ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
-  sh:property [ sh:path ui:icon ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
-  sh:property [ sh:path ui:hoverTitle ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
-  sh:property [ sh:path ui:attribute ; sh:node <#PropertyValueShape> ] ;
-  sh:property [ sh:path ui:region ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
-  sh:property [ sh:path rdfs:comment ; sh:datatype xsd:string ] ;
-  sh:property [ sh:path ci:module ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
-  sh:property [ sh:path schema:description ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
-  sh:property [ sh:path dct:conformsTo ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
-  sh:property [ sh:path dct:references ; sh:nodeKind sh:IRI ] ;
-  sh:property [ sh:path schema:softwareHelp ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] .
-
-<#PropertyValueShape> a sh:NodeShape ;
-  sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
-  sh:property [ sh:path schema:value ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] .
+# The manifest-side HALF of an entry's shape: only the loader plumbing
+# (ci:module). Everything generic about an entry — ui:name, ui:label,
+# ui:icon, ui:attribute, descriptive metadata — lives in the SHARED item
+# shapes in sol-components' shapes/menu.shacl (ui:Component / ui:Link, bound
+# via sh:targetClass). Validators load both files into one shapes graph; an
+# entry opts into the shared validation by carrying an explicit type
+# ("@type": "ui:Component" or "ui:Link" — compact IRIs the published context
+# already resolves). Deliberately NO sh:targetClass here, so ci:module never
+# constrains components outside a manifest, and deliberately no cross-file
+# IRI references. An entry may be a ui:Component (ui:name names the tag) or
+# a ui:Link (ui:href, no module to load).
+<#ManifestEntryShape> a sh:NodeShape ;
+  sh:property [ sh:path ci:module ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] .
 
 <#SharedModuleShape> a sh:NodeShape ;
   sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] .
@@ -52,7 +44,7 @@
 
 <#StageShape> a sh:NodeShape ;
   sh:property [ sh:path schema:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
-  sh:property [ sh:path ci:component ;    sh:node <#ComponentShape> ] ;
+  sh:property [ sh:path ci:component ;    sh:node <#ManifestEntryShape> ] ;
   sh:property [ sh:path ci:sharedModule ; sh:node <#SharedModuleShape> ] .
 
 <#ProvidesShape> a sh:NodeShape ;

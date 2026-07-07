@@ -23,7 +23,7 @@ This zero-dependency, tiny (~30kb source) library is component-agnostic - any we
   * externalized prereqs (e.g. rdflib) and components are guaranteed to only load once
   * in some cases, one can use attributes from a foreign library without importing the full component
 * is explicit - what a page draws from each library is named in its script tag (data-components, data-objects, data-attributes); nothing wires implicitly
-* manifests are valid JSON-LD 1.1 - RDF consumers (registries, SPARQL) can process them via the shared [context](context.jsonld) and [vocabulary](https://jeff-zucker.github.io/component-interop/ns/), and validate them against the [manifest SHACL shape](shapes/manifest.shaclc); the broker itself reads them as plain JSON, zero dependencies as ever
+* manifests are valid JSON-LD 1.1 - RDF consumers (registries, SPARQL) can process them via the shared [context](context.jsonld) and [vocabulary](https://jeff-zucker.github.io/component-interop/ns/), and validate them against the [manifest SHACL shape](shapes/manifest.shaclc) (the envelope; the shared entry shapes — `ui:Component` / `ui:Link` — live in sol-components ≥2.7.0 `shapes/menu.shacl`, loaded into the same shapes graph); the broker itself reads them as plain JSON, zero dependencies as ever
 * manifests can carry per-component display metadata (label, icon, hover title, description, default attributes, SHACL shape + data files, user help) - hosts like data-kitchen build drag-and-drop component palettes from it (`ComponentInterop.manifest.meta`)
 
 ### Check out  the [demo](https://jeff-zucker.github.io/component-interop/examples/index.html)!

@@ -11,6 +11,14 @@
 // against synthetic data. The file pass then expands + converts every real
 // manifest in safe mode (safe mode errors on any term a processor would
 // silently drop) and validates its triples against shapes/manifest.shacl.ttl.
+//
+// The shapes graph is COMPOSED: manifest.shacl.ttl carries only the manifest
+// envelope; the shared item shapes (ui:Component / ui:Link) live in
+// sol-components' shapes/menu.shacl and are loaded from the sibling checkout
+// or node_modules when available (warn + envelope-only otherwise). An entry
+// opts into item-level validation by carrying an explicit "@type":
+// "ui:Component" or "ui:Link" — compact IRIs the existing context resolves;
+// untyped entries (all real manifests today) see only the envelope shapes.
 
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -39,6 +47,22 @@ const SEE_ALSO = 'http://www.w3.org/2000/01/rdf-schema#seeAlso';
 
 const shapesStore = new Store(
   new Parser().parse(readFileSync(resolve(root, 'shapes/manifest.shacl.ttl'), 'utf8')));
+
+// Compose the shared item shapes (menu.shacl has only local #fragments, so
+// any absolute baseIRI serves).
+const MENU_SHACL_CANDIDATES = [
+  resolve(root, '../sol-components/shapes/menu.shacl'),
+  resolve(root, 'node_modules/sol-components/shapes/menu.shacl'),
+];
+const menuShaclPath = MENU_SHACL_CANDIDATES.find(existsSync);
+if (menuShaclPath) {
+  shapesStore.addQuads(new Parser({
+    baseIRI: 'https://jeff-zucker.github.io/component-interop/shapes/menu.shacl',
+  }).parse(readFileSync(menuShaclPath, 'utf8')));
+} else {
+  console.warn('warn: sol-components shapes/menu.shacl not found — '
+    + 'validating against the manifest envelope only');
+}
 const shaclValidator = new SHACLValidator(shapesStore);
 
 async function shaclCheck(label, nq) {
@@ -75,6 +99,7 @@ const proofManifest = {
     'sol-query': '../web/sol-query.js',
     '@pod-os/elements': 'https://example.org/elements.esm.js',
     'sol-feed': {                       // object form: module + display metadata
+      '@type': 'ui:Component',          // opt-in: binds the SHARED ComponentShape
       'module': '../web/sol-feed.js',
       'label': 'News (three-panel feeds)',
       'icon': '📰',
@@ -84,6 +109,11 @@ const proofManifest = {
       'shape': './shapes/feed.shacl',
       'data': ['./data/feeds.ttl', './data/more.ttl'],
       'help': './help/sol-feed.html'
+    },
+    'notepod': {                        // a LINK entry: nothing to load, just a URL
+      '@type': 'ui:Link',               // binds the shared LinkShape (xone included)
+      'label': 'NotePod',
+      'ui:href': 'https://notepod.example/'
     },
     'sol-bare': { 'label': 'Bare' }     // metadata-only (stages would carry the URL)
   },
@@ -154,7 +184,31 @@ async function runProofs() {
   check('accepts descriptor properties present',
     new RegExp(`_:\\S+ <${NS}onElement> "sol-query"`).test(nq)
       && new RegExp(`_:\\S+ <${NS}applyValueTo> "endpoint"`).test(nq));
+  check('typed entries carry rdf:type (opt-in to the shared item shapes)',
+    new RegExp(`_:\\S+ <http://www\\.w3\\.org/1999/02/22-rdf-syntax-ns#type> <${UI}Component>`).test(nq)
+      && new RegExp(`_:\\S+ <http://www\\.w3\\.org/1999/02/22-rdf-syntax-ns#type> <${UI}Link>`).test(nq));
+  check('link entry: ui:href present, no ci:module',
+    new RegExp(`_:\\S+ <${UI}href> "https://notepod\\.example/"`).test(nq));
   await shaclCheck('proof manifest', nq);
+
+  // Negative proof — only meaningful when the shared shapes are composed in:
+  // a typed ui:Link with neither ui:href nor ui:contents must NOT conform
+  // (the LinkShape sh:xone).
+  if (menuShaclPath) {
+    const badLink = {
+      ...proofManifest,
+      'components': {
+        'dangling': { '@type': 'ui:Link', 'label': 'Dangling' },
+      },
+    };
+    const badNq = await toNQuads(badLink, PROOF_BASE);
+    const report = await shaclValidator.validate(
+      new Store(new Parser({ format: 'application/n-quads' }).parse(badNq)));
+    check('typed ui:Link without href/contents FAILS the composed shapes',
+      report.conforms === false);
+  } else {
+    console.log('  (skipped negative link proof — menu.shacl not composed)');
+  }
 }
 
 // ── real manifest files ─────────────────────────────────────────────────────

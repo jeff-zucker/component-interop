@@ -1,6 +1,6 @@
 {
   "name": "component-interop",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "A small, zero-dependency capability broker for web components — let independently-authored component libraries share a store, a session, and capabilities without importing each other.",
   "type": "module",
   "main": "component-interop.js",
@@ -47,6 +47,7 @@
     "jsonld": "^9.0.0",
     "n3": "^2.0.3",
     "playwright": "^1.60.0",
-    "rdf-validate-shacl": "^0.6.5"
+    "rdf-validate-shacl": "^0.6.5",
+    "sol-components": "^2.7.0"
   }
 }

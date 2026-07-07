@@ -108,9 +108,14 @@ keys) lands in the graph as data.
   objects are already node objects and need no wrapper.
 - The manifest format itself has a SHACL shape —
   `shapes/manifest.shaclc` (compact syntax) and `shapes/manifest.shacl.ttl`
-  in the ci repo — and a manifest component, a palette entry, and a menu item
-  are all the same `ui:Component` shape, so menus, palettes, and manifests
-  validate and join as one vocabulary.
+  in the ci repo — covering the manifest *envelope*. The entry-level shapes
+  are shared: a manifest entry, a palette card, and a menu item are all the
+  same `ui:Component` (or `ui:Link` — a URL entry with nothing to load)
+  shape, which lives in sol-components ≥2.7.0 `shapes/menu.shacl`. Validators
+  load both files into one shapes graph; an object-form entry opts into
+  entry-level validation by carrying `"@type": "ui:Component"` or
+  `"ui:Link"` (compact IRIs the shared context already resolves). So menus,
+  palettes, and manifests validate and join as one vocabulary.
 - If your library ships a
   [custom-elements.json](https://github.com/webcomponents/custom-elements-manifest),
   link it with `"customElements": "./custom-elements.json"` so consumers can join
