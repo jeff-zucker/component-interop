@@ -22,16 +22,17 @@
   sh:property [ sh:path ci:accepts ;      sh:node <#AcceptsShape> ] .
 
 # The manifest-side HALF of an entry's shape: only the loader plumbing
-# (ci:module). Everything generic about an entry — ui:name, ui:label,
-# ui:icon, ui:attribute, descriptive metadata — lives in the SHARED item
-# shapes in sol-components' shapes/menu.shacl (ui:Component / ui:Link, bound
-# via sh:targetClass). Validators load both files into one shapes graph; an
+# (ci:module). Everything generic about an entry — schema:url (the single
+# payload: the element's module for a ui:Component, the target URL for a
+# ui:Link; retired ui:name/ui:href/ui:module 2026-07-19), ui:label, ui:icon,
+# ui:attribute, descriptive metadata — lives in the SHARED item shapes in
+# sol-components' shapes/menu.shacl (ui:Component / ui:Link, bound via
+# sh:targetClass). Validators load both files into one shapes graph; an
 # entry opts into the shared validation by carrying an explicit type
 # ("@type": "ui:Component" or "ui:Link" — compact IRIs the published context
 # already resolves). Deliberately NO sh:targetClass here, so ci:module never
 # constrains components outside a manifest, and deliberately no cross-file
-# IRI references. An entry may be a ui:Component (ui:name names the tag) or
-# a ui:Link (ui:href, no module to load).
+# IRI references.
 <#ManifestEntryShape> a sh:NodeShape ;
   sh:property [ sh:path ci:module ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] .
 

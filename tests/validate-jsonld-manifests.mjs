@@ -113,7 +113,7 @@ const proofManifest = {
     'notepod': {                        // a LINK entry: nothing to load, just a URL
       '@type': 'ui:Link',               // binds the shared LinkShape (xone included)
       'label': 'NotePod',
-      'ui:href': 'https://notepod.example/'
+      'schema:url': 'https://notepod.example/'
     },
     'sol-bare': { 'label': 'Bare' }     // metadata-only (stages would carry the URL)
   },
@@ -143,20 +143,21 @@ async function runProofs() {
     nq.includes(`<${PROOF_BASE}> <${SCHEMA_NAME}> "proof-lib"`));
   check('customElements → rdfs:seeAlso, relative URL resolved',
     nq.includes(`<${PROOF_BASE}> <${SEE_ALSO}> <https://example.org/lib/custom-elements.json>`));
-  check('component map key → ui:name on the module node (@type:@id + property index)',
-    nq.includes(`<https://example.org/web/sol-query.js> <${UI}name> "sol-query"`));
-  check('@-prefixed component index key survives',
-    nq.includes(`<https://example.org/elements.esm.js> <${UI}name> "@pod-os/elements"`));
+  // Component map keys are PLAIN JSON-LD indexes now (2026-07-19): the
+  // retired ui:name predicate must not appear in any projection — the tag
+  // derives from a module's filename wherever it's needed.
+  check('component map keys project NO ui:name triples',
+    !nq.includes(`<${UI}name>`));
+  check('@-prefixed component index key still resolves its module IRI',
+    nq.includes('<https://example.org/elements.esm.js>'));
   check('shared-module key → schema:name on the module node',
     nq.includes(`<https://esm.sh/@comunica/query-sparql@5> <${SCHEMA_NAME}> "@comunica/query-sparql"`));
   check('attribute wrapper: key → schema:name, value → ci:module literal',
     new RegExp(`_:\\S+ <${SCHEMA}name> "data-edit-shape"`).test(nq)
       && new RegExp(`_:\\S+ <${NS}module> "sol-components/core/rdf-bundle\\.js"`).test(nq));
   check('stage key → schema:name ("local")', nq.includes('"local"'));
-  check('nested stage components get ui:name',
-    nq.includes(`<https://example.org/lib/web/sol-basic.js> <${UI}name> "sol-basic"`));
-  check('object-form component: map key still → ui:name',
-    new RegExp(`_:\\S+ <${UI}name> "sol-feed"`).test(nq));
+  check('nested stage component key resolves its module IRI (no ui:name)',
+    nq.includes('<https://example.org/lib/web/sol-basic.js>'));
   check('object-form component: scoped module → ci:module as resolved IRI',
     new RegExp(`_:\\S+ <${NS}module> <https://example\\.org/web/sol-feed\\.js>`).test(nq));
   check('label → ui:label', new RegExp(`_:\\S+ <${UI}label> "News \\(three-panel feeds\\)"`).test(nq));
@@ -175,8 +176,8 @@ async function runProofs() {
       && nq.includes('lib/data/more.ttl>'));
   check('help → schema:softwareHelp, resolved',
     new RegExp(`_:\\S+ <${SCHEMA}softwareHelp> <https://example\\.org/lib/help/sol-feed\\.html>`).test(nq));
-  check('metadata-only component (no module) still gets ui:name + label',
-    new RegExp(`_:\\S+ <${UI}name> "sol-bare"`).test(nq) && new RegExp(`_:\\S+ <${UI}label> "Bare"`).test(nq));
+  check('metadata-only component (no module) still gets its label',
+    new RegExp(`_:\\S+ <${UI}label> "Bare"`).test(nq));
   check('objects is @nest: provides hangs off the manifest node',
     nq.includes(`<${PROOF_BASE}> <${NS}provides> _:`));
   check('provides key → schema:name ("store") + ci:service',
@@ -187,12 +188,12 @@ async function runProofs() {
   check('typed entries carry rdf:type (opt-in to the shared item shapes)',
     new RegExp(`_:\\S+ <http://www\\.w3\\.org/1999/02/22-rdf-syntax-ns#type> <${UI}Component>`).test(nq)
       && new RegExp(`_:\\S+ <http://www\\.w3\\.org/1999/02/22-rdf-syntax-ns#type> <${UI}Link>`).test(nq));
-  check('link entry: ui:href present, no ci:module',
-    new RegExp(`_:\\S+ <${UI}href> "https://notepod\\.example/"`).test(nq));
+  check('link entry: schema:url present, no ci:module',
+    new RegExp(`_:\\S+ <${SCHEMA}url> "https://notepod\\.example/"`).test(nq));
   await shaclCheck('proof manifest', nq);
 
   // Negative proof — only meaningful when the shared shapes are composed in:
-  // a typed ui:Link with neither ui:href nor ui:contents must NOT conform
+  // a typed ui:Link with neither schema:url nor ui:contents must NOT conform
   // (the LinkShape sh:xone).
   if (menuShaclPath) {
     const badLink = {
@@ -204,7 +205,7 @@ async function runProofs() {
     const badNq = await toNQuads(badLink, PROOF_BASE);
     const report = await shaclValidator.validate(
       new Store(new Parser({ format: 'application/n-quads' }).parse(badNq)));
-    check('typed ui:Link without href/contents FAILS the composed shapes',
+    check('typed ui:Link without schema:url/contents FAILS the composed shapes',
       report.conforms === false);
   } else {
     console.log('  (skipped negative link proof — menu.shacl not composed)');

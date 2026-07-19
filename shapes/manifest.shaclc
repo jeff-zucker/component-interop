@@ -29,12 +29,12 @@ shape <#ManifestShape> -> ci:Manifest {
 }
 
 # The manifest-side HALF of an entry's shape: only the loader plumbing
-# (ci:module). Everything generic about an entry (ui:name, ui:label, ui:icon,
+# (ci:module). Everything generic about an entry (schema:url, ui:label, ui:icon,
 # ui:attribute, descriptive metadata) lives in the shared shapes in
 # sol-components' shapes/menu.shacl. Deliberately NO targetClass (ci:module
 # must not constrain components outside a manifest) and no cross-file IRI
-# references. An entry may be a ui:Component (ui:name names the tag) or a
-# ui:Link (ui:href, no module to load).
+# references. An entry may be a ui:Component (its schema:url module filename
+# names the tag) or a ui:Link (schema:url, no module to load).
 shape <#ManifestEntryShape> {
 	ci:module IRI [0..1] .                   # the ES module to import; absent when the node
 	                                         # itself IS the module IRI (string-form entry)

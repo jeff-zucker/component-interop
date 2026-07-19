@@ -11,7 +11,7 @@
     "name": "schema:name",
     "customElements": { "@id": "rdfs:seeAlso", "@type": "@id" },
 
-    "components":     { "@id": "ci:component",    "@container": "@index", "@index": "ui:name",  "@type": "@id",
+    "components":     { "@id": "ci:component",    "@container": "@index", "@type": "@id",
                         "@context": { "module": { "@id": "ci:module", "@type": "@id" } } },
     "shared-modules": { "@id": "ci:sharedModule", "@container": "@index", "@index": "schema:name", "@type": "@id" },
 
