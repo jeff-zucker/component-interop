@@ -100,7 +100,9 @@ const proofManifest = {
     '@pod-os/elements': 'https://example.org/elements.esm.js',
     'sol-feed': {                       // object form: module + display metadata
       '@type': 'ui:Component',          // opt-in: binds the SHARED ComponentShape
-      'module': '../web/sol-feed.js',
+      'module': '../web/sol-feed.js',   // ci loader plumbing (ci:module)
+      // the generic payload IRI — REQUIRED by the shared ComponentShape (2026-07-19)
+      'schema:url': { '@id': '../web/sol-feed.js' },
       'label': 'News (three-panel feeds)',
       'icon': '📰',
       'title': 'Three-panel feed reader',
