@@ -25,7 +25,7 @@
 # (ci:module). Everything generic about an entry — schema:url (the single
 # payload: the element's module for a ui:Component, the target URL for a
 # ui:Link; retired ui:name/ui:href/ui:module 2026-07-19), ui:label, ui:icon,
-# ui:attribute, descriptive metadata — lives in the SHARED item shapes in
+# schema:additionalProperty, descriptive metadata — lives in the SHARED item shapes in
 # sol-components' shapes/menu.shacl (ui:Component / ui:Link, bound via
 # sh:targetClass). Validators load both files into one shapes graph; an
 # entry opts into the shared validation by carrying an explicit type

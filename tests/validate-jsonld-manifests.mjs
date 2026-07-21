@@ -105,7 +105,6 @@ const proofManifest = {
       'schema:url': { '@id': '../web/sol-feed.js' },
       'label': 'News (three-panel feeds)',
       'icon': '📰',
-      'title': 'Three-panel feed reader',
       'description': 'Browse feeds by source.',
       'params': [{ 'name': 'view', 'value': 'threePanel' }],
       'shape': './shapes/feed.shacl',
@@ -114,7 +113,7 @@ const proofManifest = {
     },
     'notepod': {                        // a LINK entry: nothing to load, just a URL
       '@type': 'ui:Link',               // binds the shared LinkShape (xone included)
-      'label': 'NotePod',
+      'title': 'NotePod',              // the title key is a ui:label alias
       'schema:url': 'https://notepod.example/'
     },
     'sol-bare': { 'label': 'Bare' }     // metadata-only (stages would carry the URL)
@@ -164,11 +163,11 @@ async function runProofs() {
     new RegExp(`_:\\S+ <${NS}module> <https://example\\.org/web/sol-feed\\.js>`).test(nq));
   check('label → ui:label', new RegExp(`_:\\S+ <${UI}label> "News \\(three-panel feeds\\)"`).test(nq));
   check('icon → ui:icon (literal, not URL-resolved)', new RegExp(`_:\\S+ <${UI}icon> "📰"`).test(nq));
-  check('title → ui:hoverTitle', new RegExp(`_:\\S+ <${UI}hoverTitle> "Three-panel feed reader"`).test(nq));
+  check('title key → ui:label (alias)', new RegExp(`_:\\S+ <${UI}label> "NotePod"`).test(nq));
   check('description → schema:description (http)',
     new RegExp(`_:\\S+ <${SCHEMA}description> "Browse feeds by source\\."`).test(nq));
-  check('params → ui:attribute as schema:PropertyValue pairs',
-    new RegExp(`_:\\S+ <${UI}attribute> _:`).test(nq)
+  check('params → schema:additionalProperty as schema:PropertyValue pairs',
+    new RegExp(`_:\\S+ <${SCHEMA}additionalProperty> _:`).test(nq)
       && new RegExp(`_:\\S+ <${SCHEMA}name> "view"`).test(nq)
       && new RegExp(`_:\\S+ <${SCHEMA}value> "threePanel"`).test(nq));
   check('shape → dct:conformsTo, relative IRI resolved',

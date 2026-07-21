@@ -99,12 +99,12 @@ schema.org's general label;
 <code>schema:description</code> a component's one-sentence user-facing description;
 <code>schema:softwareHelp</code> a component's USER online help page;
 <code>schema:url</code>, <code>ui:label</code>, <code>ui:icon</code>,
-<code>ui:hoverTitle</code>, <code>ui:attribute</code>
+<code>schema:additionalProperty</code>
 (<code>http://www.w3.org/ns/ui#</code>, documented in sol-components'
 <code>data/ui-vocab.ttl</code>) — a manifest entry is a
 <code>ui:Component</code> or a <code>ui:Link</code>, the same shapes menus
 and palettes use, with
-<code>ui:attribute</code> values being <code>schema:PropertyValue</code> pairs;
+<code>schema:additionalProperty</code> values being <code>schema:PropertyValue</code> pairs;
 <code>dct:conformsTo</code> the SHACL shape a component's data conforms to;
 <code>dct:references</code> the data document(s) it reads/writes;
 <code>rdfs:seeAlso</code> (as the manifest key <code>customElements</code>)
@@ -125,7 +125,7 @@ carrying an explicit <code>@type</code>.
 <table>
 <tr><th>Term</th><th>Type</th><th>Definition</th></tr>
 <tr><td><code>ci:Manifest</code></td><td>Class</td><td>A component-interop loader manifest: declares the components, capability attributes, staged module URLs, and shared-value wiring of one library.</td></tr>
-<tr><td><code>ci:component</code></td><td>Property</td><td>Links a manifest (or a stage) to an entry it offers — a <code>ui:Component</code> whose <code>schema:url</code> module filename is the tag, plus optional display metadata (<code>ui:label</code>, <code>ui:icon</code>, <code>ui:hoverTitle</code>, <code>schema:description</code>, <code>ui:attribute</code> defaults, <code>dct:conformsTo</code>, <code>dct:references</code>, <code>schema:softwareHelp</code>, <code>ci:module</code>), <em>or</em> a <code>ui:Link</code> (<code>schema:url</code> + <code>ui:label</code> — nothing to load). No formal range — a deliberate union; the shared shapes in sol-components' <code>shapes/menu.shacl</code> constrain each kind.</td></tr>
+<tr><td><code>ci:component</code></td><td>Property</td><td>Links a manifest (or a stage) to an entry it offers — a <code>ui:Component</code> whose <code>schema:url</code> module filename is the tag, plus optional display metadata (<code>ui:label</code>, <code>ui:icon</code>, <code>schema:description</code>, <code>schema:additionalProperty</code> defaults, <code>dct:conformsTo</code>, <code>dct:references</code>, <code>schema:softwareHelp</code>, <code>ci:module</code>), <em>or</em> a <code>ui:Link</code> (<code>schema:url</code> + <code>ui:label</code> — nothing to load). No formal range — a deliberate union; the shared shapes in sol-components' <code>shapes/menu.shacl</code> constrain each kind.</td></tr>
 <tr><td><code>ci:sharedModule</code></td><td>Property</td><td>Links a manifest (or a stage) to a dependency module mapped in the import map; the module node carries <code>schema:name</code> (its bare specifier).</td></tr>
 <tr><td><code>ci:attribute</code></td><td>Property</td><td>Links a manifest to a <code>data-*</code> capability attribute declaration (<code>schema:name</code> + <code>ci:module</code>). Distinct from the custom-elements-manifest sense of a component's own attributes.</td></tr>
 <tr><td><code>ci:stage</code></td><td>Property</td><td>Links a manifest to a per-environment URL set (e.g. <code>local</code>, <code>cdn</code>).</td></tr>

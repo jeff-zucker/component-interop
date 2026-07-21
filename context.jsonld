@@ -17,9 +17,9 @@
 
     "label":       "ui:label",
     "icon":        "ui:icon",
-    "title":       "ui:hoverTitle",
+    "title":       "ui:label",
     "description": "schema:description",
-    "params":      { "@id": "ui:attribute",
+    "params":      { "@id": "schema:additionalProperty",
                      "@context": { "name": "schema:name", "value": "schema:value" } },
     "shape":       { "@id": "dct:conformsTo",       "@type": "@id" },
     "data":        { "@id": "dct:references",       "@type": "@id" },
