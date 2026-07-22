@@ -51,6 +51,13 @@ npm i -D playwright && npx playwright install
 
 If Playwright isn't installed, the tests skip rather than fail.
 
+### The examples' sol-components manifest is a copy
+
+`examples/sol-components.manifest.json` is a hand-copied snapshot of
+sol-components' `dist/sol-components.manifest.json` — nothing syncs it. Refresh
+it (`cp`) whenever sc's component set changes, or the demo will load a stale
+component list.
+
 ### Security / trust model
 
 Component Interop shares capabilities **within a single document**. When a component
